@@ -43,5 +43,6 @@ see devlog/devlog.md for guideline
 3. Live preview  
   -> Should be easy if Filesystem is setup
 4. Live editing 
-  -> React DOM to index structure and can select to prompt 
+  -> React DOM to index structure and can select to prompt
+5. Publish site 
 
