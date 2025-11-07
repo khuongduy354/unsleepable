@@ -2,12 +2,12 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-// import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { registerStyles as styles } from "./RegisterStyles";
 
 export default function RegisterPage() {
   const router = useRouter();
-//   const supabase = createClientComponentClient();
+  const supabase = createClientComponentClient();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -17,25 +17,25 @@ export default function RegisterPage() {
     e.preventDefault();
     setError("");
     setLoading(true);
-    // try {
-    //   const { error } = await supabase.auth.signUp({
-    //     email,
-    //     password,
-    //   });
-    //   if (error) throw error;
-    //   alert("Vui lòng kiểm tra email để xác nhận tài khoản.");
-    //   router.push("/login");
-    // } catch (err: any) {
-    //   setError(err.message);
-    // } finally {
-    //   setLoading(false);
-    // }
+    try {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+      });
+      if (error) throw error;
+      alert("Vui lòng kiểm tra email để xác nhận tài khoản.");
+      router.push("/login");
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div style={{ ...styles.wrap }}>
       <form 
-        // onSubmit={handleRegister} 
+        onSubmit={handleRegister} 
         style={styles.card}>
         <h1>Đăng ký</h1>
         {error && <div style={styles.error}>{error}</div>}

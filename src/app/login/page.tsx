@@ -1,127 +1,82 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-// import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
-import { loginStyles as styles } from "./LoginStyles";
-
+import React from "react";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
 import {
-  handleEmailPasswordSubmit,
-  // handleGoogleLogin,
-  handleGuestLogin,
-  handleGoToRegister,
-} from "./loginHandlers";
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import SignInWithGoogleButton from "./components/SignInWithGoogleButton";
+import { login } from "@/lib/auth-actions";
 
 export default function LoginPage() {
-  const router = useRouter();
-  // const supabase = createClientComponentClient();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPw, setShowPw] = useState(false);
-  const [remember, setRemember] = useState(true);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-
   return (
-    <div style={styles.wrap}>
-      <form
-        onSubmit={(e) =>
-          handleEmailPasswordSubmit({
-            e,
-            // supabase,
-            router,
-            email,
-            password,
-            setError,
-            setLoading,
-          })
-        }
-        style={styles.card}
-      >
-        <h1 style={{ margin: 0, fontSize: 24 }}>Đăng nhập</h1>
-        <p style={{ marginTop: 8, color: "#667085" }}>Chọn phương thức đăng nhập</p>
+    <div className="flex min-h-screen items-center justify-center bg-gray-50">
+      <Card className="mx-auto max-w-sm w-full shadow-lg">
+        <CardHeader>
+          <CardTitle className="text-2xl text-center">Login</CardTitle>
+          <CardDescription className="text-center">
+            Enter your credentials or use Google to continue
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form action="">
+            <div className="grid gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  placeholder="m@example.com"
+                  required
+                />
+              </div>
+              <div className="grid gap-2">
+                <div className="flex items-center">
+                  <Label htmlFor="password">Password</Label>
+                  <Link
+                    href="#"
+                    className="ml-auto inline-block text-sm text-blue-600 hover:underline"
+                  >
+                    Forgot your password?
+                  </Link>
+                </div>
+                <Input id="password" name="password" type="password" required />
+              </div>
+              <Button type="submit" formAction={login} className="w-full">
+                Login
+              </Button>
 
-        {error && <div style={styles.error}>{error}</div>}
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-background px-2 text-muted-foreground">
+                    Or continue with
+                  </span>
+                </div>
+              </div>
 
-        <label style={styles.label}>
-          Email
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="you@example.com"
-            style={styles.input}
-            autoComplete="email"
-            required
-          />
-        </label>
+              <SignInWithGoogleButton />
+            </div>
+          </form>
 
-        <label style={styles.label}>
-          Mật khẩu
-          <div style={{ position: "relative" }}>
-            <input
-              type={showPw ? "text" : "password"}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              style={{ ...styles.input, paddingRight: 72 }}
-              autoComplete="current-password"
-              required
-            />
-            <button
-              type="button"
-              onClick={() => setShowPw((s) => !s)}
-              style={styles.eyeBtn}
-              aria-label={showPw ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
-            >
-              {showPw ? "Hide" : "Show"}
-            </button>
+          <div className="mt-4 text-center text-sm">
+            Don&apos;t have an account?{" "}
+            <Link href="/signup" className="underline text-blue-600">
+              Sign up
+            </Link>
           </div>
-        </label>
-
-        <div style={styles.rowBetween}>
-          <label style={styles.checkLabel}>
-            <input
-              type="checkbox"
-              checked={remember}
-              onChange={(e) => {}}
-            />
-            Ghi nhớ tôi
-          </label>
-        </div>
-
-        <button type="submit" style={styles.primaryBtn} disabled={loading}>
-          {loading ? "Đang đăng nhập…" : "Đăng nhập"}
-        </button>
-
-        <button
-          type="button"
-          // onClick={() => handleGoogleLogin(supabase, setError)}
-          style={styles.secondaryBtn}
-        >
-          🔑 Đăng nhập bằng Google
-        </button>
-
-        <button
-          type="button"
-          onClick={() => handleGuestLogin(router)}
-          style={styles.guestBtn}
-        >
-          👤 Đăng nhập với tư cách khách
-        </button>
-
-        <p style={{ marginTop: 16, fontSize: 14, color: "#667085" }}>
-          Chưa có tài khoản?{" "}
-          <button
-            type="button"
-            onClick={() => handleGoToRegister(router)}
-            style={styles.linkBtn}
-          >
-            Đăng ký ngay
-          </button>
-        </p>
-      </form>
+        </CardContent>
+      </Card>
     </div>
   );
 }
-

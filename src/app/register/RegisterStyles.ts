@@ -1,4 +1,6 @@
-export const registerStyles = {
+import { CSSProperties } from "react";
+
+export const registerStyles: Record<string, CSSProperties> = {
   wrap: {
     minHeight: "100dvh",
     display: "flex",
