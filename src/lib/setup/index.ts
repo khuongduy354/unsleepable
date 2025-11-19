@@ -1,8 +1,15 @@
-import { getPostService as originalGetPostService } from "./production-setup";
+import {
+  getPostService as originalGetPostService,
+  getCommunityService as originalGetCommunityService,
+} from "./production-setup";
 
 class Service {
   async getPostService() {
     return await originalGetPostService();
+  }
+
+  async getCommunityService() {
+    return await originalGetCommunityService();
   }
 }
 
