@@ -2,7 +2,6 @@
 export interface CreatePostDTO {
   title: string;
   content: string;
-  author_id: string;
 }
 
 export interface UpdatePostDTO {

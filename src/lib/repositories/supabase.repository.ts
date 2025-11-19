@@ -5,17 +5,21 @@ import {
   Post,
   IPostRepository,
 } from "../types/post.type";
-
+import { v4 as uuidv4 } from "uuid";
+const fakeUserId = "d2f1d6c0-47b4-4e3d-9ce4-5cb9033e1234"; // id có thật trong User
+const fakeCommunityId = "6f346e21-93a1-48ee-b1c5-55791f44afcd";
 export class SupabasePostRepository implements IPostRepository {
   constructor(private supabase: SupabaseClient) {}
 
   async create(data: CreatePostDTO): Promise<Post> {
     const { data: post, error } = await this.supabase
-      .from("posts")
+      .from("Post")
       .insert({
+        id: uuidv4(),
+        user_id: fakeUserId,
+        community_id: fakeCommunityId,
         title: data.title,
         content: data.content,
-        author_id: data.author_id,
       })
       .select()
       .single();
