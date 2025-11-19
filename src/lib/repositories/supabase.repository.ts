@@ -16,6 +16,9 @@ export class SupabasePostRepository implements IPostRepository {
         title: data.title,
         content: data.content,
         author_id: data.author_id,
+        media_url: data.media_url,
+        media_type: data.media_type,
+        storage_path: data.storage_path,
       })
       .select()
       .single();

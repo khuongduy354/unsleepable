@@ -2,12 +2,18 @@
 export interface CreatePostDTO {
   title: string;
   content: string;
-  author_id: string;
+    author_id: string;
+    media_url: string;
+    media_type: "media" | "video";
+    storage_path: string;
 }
 
 export interface UpdatePostDTO {
   title?: string;
   content?: string;
+  media_url?: string;
+  media_type?: string;
+  storage_path?: string;
 }
 
 export interface PostFilters {
@@ -28,6 +34,9 @@ export interface Post {
   title: string;
   content: string;
   author_id: string;
+  media_url: string;
+  media_type: string;
+  storage_path: string;
   created_at: string;
   updated_at: string;
 }
