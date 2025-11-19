@@ -24,7 +24,7 @@ export default function RegisterPage() {
       });
       if (error) throw error;
       alert("Vui lòng kiểm tra email để xác nhận tài khoản.");
-      router.push("/login");
+      router.push("/auth/login");
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -34,9 +34,7 @@ export default function RegisterPage() {
 
   return (
     <div style={{ ...styles.wrap }}>
-      <form 
-        onSubmit={handleRegister} 
-        style={styles.card}>
+      <form onSubmit={handleRegister} style={styles.card}>
         <h1>Đăng ký</h1>
         {error && <div style={styles.error}>{error}</div>}
         <input
@@ -60,7 +58,7 @@ export default function RegisterPage() {
         </button>
         <button
           type="button"
-          onClick={() => router.push("/login")}
+          onClick={() => router.push("/auth/login")}
           style={styles.secondaryBtn}
         >
           ← Quay lại đăng nhập
@@ -69,4 +67,3 @@ export default function RegisterPage() {
     </div>
   );
 }
-

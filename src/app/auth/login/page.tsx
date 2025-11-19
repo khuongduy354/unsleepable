@@ -2,16 +2,16 @@
 
 import React from "react";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/app/auth/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+} from "@/app/auth/ui/card";
+import { Input } from "@/app/auth/ui/input";
+import { Label } from "@/app/auth/ui/label";
 import SignInWithGoogleButton from "./components/SignInWithGoogleButton";
 import { login } from "@/lib/auth-actions";
 
@@ -71,7 +71,7 @@ export default function LoginPage() {
 
           <div className="mt-4 text-center text-sm">
             Don&apos;t have an account?{" "}
-            <Link href="/signup" className="underline text-blue-600">
+            <Link href="/auth/signup" className="underline text-blue-600">
               Sign up
             </Link>
           </div>
