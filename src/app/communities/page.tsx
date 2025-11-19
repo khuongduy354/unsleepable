@@ -23,7 +23,7 @@ export default function CommunitiesPage() {
   const [ownedCommunities, setOwnedCommunities] = useState<Community[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [userId, setUserId] = useState("");
+  const [userId, setUserId] = useState("d2f1d6c0-47b4-4e3d-9ce4-5cb9033e1234");
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingCommunity, setEditingCommunity] = useState<Community | null>(
     null
@@ -224,6 +224,7 @@ export default function CommunitiesPage() {
           <input
             type="text"
             value={userId}
+            // defaultValue={"d2f1d6c0-47b4-4e3d-9ce4-5cb9033e1234"}
             onChange={(e) => setUserId(e.target.value)}
             placeholder="Enter a user ID"
             className="w-full p-2 border rounded"
