@@ -17,16 +17,17 @@ export interface IPostRepository {
   create(data: CreatePostDTO): Promise<Post>;
   findById(id: string): Promise<Post | null>;
   findAll(): Promise<Post[]>;
-  findByAuthorId(authorId: string): Promise<Post[]>;
+  findByUserId(userId: string): Promise<Post[]>;
   update(id: string, data: UpdatePostDTO): Promise<Post>;
   delete(id: string): Promise<void>;
 }
 
 export interface Post {
   id: string;
+  user_id: string;
+  community_id: string;
   title: string;
   content: string;
-  author_id: string;
   created_at: string;
   updated_at: string;
 }

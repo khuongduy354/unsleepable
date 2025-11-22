@@ -33,7 +33,7 @@ export class SupabasePostRepository implements IPostRepository {
 
   async findById(id: string): Promise<Post | null> {
     const { data: post, error } = await this.supabase
-      .from("posts")
+      .from("Post")
       .select("*")
       .eq("id", id)
       .single();
@@ -50,7 +50,7 @@ export class SupabasePostRepository implements IPostRepository {
 
   async findAll(): Promise<Post[]> {
     const { data: posts, error } = await this.supabase
-      .from("posts")
+      .from("Post")
       .select("*")
       .order("created_at", { ascending: false });
 
@@ -61,15 +61,15 @@ export class SupabasePostRepository implements IPostRepository {
     return posts || [];
   }
 
-  async findByAuthorId(authorId: string): Promise<Post[]> {
+  async findByUserId(userId: string): Promise<Post[]> {
     const { data: posts, error } = await this.supabase
-      .from("posts")
+      .from("Post")
       .select("*")
-      .eq("author_id", authorId)
+      .eq("user_id", userId)
       .order("created_at", { ascending: false });
 
     if (error) {
-      throw new Error(`Failed to fetch posts by author: ${error.message}`);
+      throw new Error(`Failed to fetch posts by user: ${error.message}`);
     }
 
     return posts || [];
@@ -77,7 +77,7 @@ export class SupabasePostRepository implements IPostRepository {
 
   async update(id: string, data: UpdatePostDTO): Promise<Post> {
     const { data: post, error } = await this.supabase
-      .from("posts")
+      .from("Post")
       .update({
         ...data,
         updated_at: new Date().toISOString(),
@@ -94,7 +94,7 @@ export class SupabasePostRepository implements IPostRepository {
   }
 
   async delete(id: string): Promise<void> {
-    const { error } = await this.supabase.from("posts").delete().eq("id", id);
+    const { error } = await this.supabase.from("Post").delete().eq("id", id);
 
     if (error) {
       throw new Error(`Failed to delete post: ${error.message}`);
