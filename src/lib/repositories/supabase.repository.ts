@@ -5,7 +5,6 @@ import {
   Post,
   IPostRepository,
 } from "../types/post.type";
-import { v4 as uuidv4 } from "uuid";
 const fakeUserId = "d2f1d6c0-47b4-4e3d-9ce4-5cb9033e1234"; // id có thật trong User
 const fakeCommunityId = "6f346e21-93a1-48ee-b1c5-55791f44afcd";
 export class SupabasePostRepository implements IPostRepository {
@@ -15,7 +14,6 @@ export class SupabasePostRepository implements IPostRepository {
     const { data: post, error } = await this.supabase
       .from("Post")
       .insert({
-        id: uuidv4(),
         user_id: fakeUserId,
         community_id: fakeCommunityId,
         title: data.title,
@@ -94,7 +92,10 @@ export class SupabasePostRepository implements IPostRepository {
   }
 
   async delete(id: string): Promise<void> {
-    const { error } = await this.supabase.from("Post").delete().eq("id", id);
+    const { error } = await this.supabase
+      .from("Post")
+      .delete()
+      .eq("id", id);
 
     if (error) {
       throw new Error(`Failed to delete post: ${error.message}`);
