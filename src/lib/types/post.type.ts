@@ -30,19 +30,60 @@ export interface Post {
   updated_at: string;
 }
 
+// Comment DTOs and interfaces
+export interface CreateCommentDTO {
+  content: string;
+  user_id: string;
+  post_id: string;
+  parent_comment_id?: string;
+}
+
+export interface UpdateCommentDTO {
+  content?: string;
+}
+
+export interface Comment {
+  id: string;
+  content: string;
+  user_id: string;
+  post_id: string;
+  parent_comment_id: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface IPostRepository {
   create(data: CreatePostDTO): Promise<Post>;
   findById(id: string): Promise<Post | null>;
   findAll(): Promise<Post[]>;
   findByUserId(userId: string): Promise<Post[]>;
+  findByCommunityId(communityId: string): Promise<Post[]>;
   update(id: string, data: UpdatePostDTO): Promise<Post>;
   delete(id: string): Promise<void>;
+  
+  // Comment methods
+  createComment(data: CreateCommentDTO): Promise<Comment>;
+  findCommentById(id: string): Promise<Comment | null>;
+  findCommentsByPostId(postId: string): Promise<Comment[]>;
+  findRepliesByCommentId(commentId: string): Promise<Comment[]>;
+  updateComment(id: string, data: UpdateCommentDTO): Promise<Comment>;
+  deleteComment(id: string): Promise<void>;
 }
+
 export interface IPostService {
   createPost(data: CreatePostDTO): Promise<Post>;
   getPostById(id: string): Promise<Post | null>;
   getPosts(filters?: PostFilters): Promise<Post[]>;
   getPostsByAuthor(authorId: string): Promise<Post[]>;
+  getPostsByCommunity(communityId: string): Promise<Post[]>;
   updatePost(id: string, data: UpdatePostDTO): Promise<Post>;
   deletePost(id: string): Promise<void>;
+  
+  // Comment methods
+  createComment(data: CreateCommentDTO): Promise<Comment>;
+  getCommentById(id: string): Promise<Comment | null>;
+  getCommentsByPost(postId: string): Promise<Comment[]>;
+  getRepliesByComment(commentId: string): Promise<Comment[]>;
+  updateComment(id: string, data: UpdateCommentDTO): Promise<Comment>;
+  deleteComment(id: string): Promise<void>;
 }

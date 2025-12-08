@@ -4,6 +4,9 @@ import {
   UpdatePostDTO,
   Post,
   IPostRepository,
+  CreateCommentDTO,
+  UpdateCommentDTO,
+  Comment,
 } from "../types/post.type";
 const fakeUserId = "d2f1d6c0-47b4-4e3d-9ce4-5cb9033e1234"; // id có thật trong User
 const fakeCommunityId = "6f346e21-93a1-48ee-b1c5-55791f44afcd";
@@ -77,6 +80,20 @@ export class SupabasePostRepository implements IPostRepository {
     return posts || [];
   }
 
+  async findByCommunityId(communityId: string): Promise<Post[]> {
+    const { data: posts, error } = await this.supabase
+      .from("Post")
+      .select("*")
+      .eq("community_id", communityId)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      throw new Error(`Failed to fetch posts by community: ${error.message}`);
+    }
+
+    return posts || [];
+  }
+
   async update(id: string, data: UpdatePostDTO): Promise<Post> {
     const { data: post, error } = await this.supabase
       .from("Post")
@@ -103,6 +120,101 @@ export class SupabasePostRepository implements IPostRepository {
 
     if (error) {
       throw new Error(`Failed to delete post: ${error.message}`);
+    }
+  }
+
+  // Comment methods
+  async createComment(data: CreateCommentDTO): Promise<Comment> {
+    const { data: comment, error } = await this.supabase
+      .from("Comments")
+      .insert({
+        content: data.content,
+        user_id: data.user_id,
+        post_id: data.post_id,
+        parent_comment_id: data.parent_comment_id || null,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(`Failed to create comment: ${error.message}`);
+    }
+
+    return comment;
+  }
+
+  async findCommentById(id: string): Promise<Comment | null> {
+    const { data: comment, error } = await this.supabase
+      .from("Comments")
+      .select("*")
+      .eq("id", id)
+      .single();
+
+    if (error) {
+      if (error.code === "PGRST116") {
+        return null;
+      }
+      throw new Error(`Failed to find comment: ${error.message}`);
+    }
+
+    return comment;
+  }
+
+  async findCommentsByPostId(postId: string): Promise<Comment[]> {
+    const { data: comments, error } = await this.supabase
+      .from("Comments")
+      .select("*")
+      .eq("post_id", postId)
+      .is("parent_comment_id", null)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      throw new Error(`Failed to fetch comments: ${error.message}`);
+    }
+
+    return comments || [];
+  }
+
+  async findRepliesByCommentId(commentId: string): Promise<Comment[]> {
+    const { data: replies, error } = await this.supabase
+      .from("Comments")
+      .select("*")
+      .eq("parent_comment_id", commentId)
+      .order("created_at", { ascending: true });
+
+    if (error) {
+      throw new Error(`Failed to fetch replies: ${error.message}`);
+    }
+
+    return replies || [];
+  }
+
+  async updateComment(id: string, data: UpdateCommentDTO): Promise<Comment> {
+    const { data: comment, error } = await this.supabase
+      .from("Comments")
+      .update({
+        ...data,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(`Failed to update comment: ${error.message}`);
+    }
+
+    return comment;
+  }
+
+  async deleteComment(id: string): Promise<void> {
+    const { error } = await this.supabase
+      .from("Comments")
+      .delete()
+      .eq("id", id);
+
+    if (error) {
+      throw new Error(`Failed to delete comment: ${error.message}`);
     }
   }
 }

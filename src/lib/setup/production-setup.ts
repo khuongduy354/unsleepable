@@ -1,6 +1,8 @@
 import { createClient } from "@/utils/supabase/server";
 import { CommunityService } from "../services/community.service";
 import { SupabaseCommunityRepository } from "@/lib/repositories/supabase/community.repository";
+import { PostService } from "../services/post.service";
+import { SupabasePostRepository } from "../repositories/supabase.repository";
 
 /**
  * Dependency Injection Container
@@ -20,11 +22,26 @@ export async function setupCommunityService() {
   return communityService;
 }
 
+export async function setupPostService() {
+  const supabase = await createClient();
+  const postRepository = new SupabasePostRepository(supabase);
+  const postService = new PostService(postRepository);
+  return postService;
+}
+
 let communityServiceInstance: CommunityService | null = null;
+let postServiceInstance: PostService | null = null;
 
 export async function getCommunityService(): Promise<CommunityService> {
   if (!communityServiceInstance) {
     communityServiceInstance = await setupCommunityService();
   }
   return communityServiceInstance;
+}
+
+export async function getPostService(): Promise<PostService> {
+  if (!postServiceInstance) {
+    postServiceInstance = await setupPostService();
+  }
+  return postServiceInstance;
 }
