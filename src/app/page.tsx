@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import UploadButton from "./auth/ui/upload.tsx";
+import ShortUrlSetter from "./auth/ui/shortUrl.tsx" 
 
 export default function TestPostPage() {
   // State quản lý Input
@@ -16,7 +17,7 @@ export default function TestPostPage() {
   const [updateId, setUpdateId] = useState("");
   const [updateTitle, setUpdateTitle] = useState("");
   const [updateContent, setUpdateContent] = useState("");
-
+  const [updateShortUrl, setUpdateShortUrl] = useState("");
   // State hiển thị kết quả
   const [result, setResult] = useState("");
   const [message, setMessage] = useState("");
@@ -112,6 +113,7 @@ export default function TestPostPage() {
       const payload = {
         title: updateTitle || undefined,
         content: updateContent || undefined,
+        shortUrl: updateShortUrl || undefined,
       };
 
       const res = await fetch(`/api/post/${updateId}`, {
@@ -127,6 +129,7 @@ export default function TestPostPage() {
       setUpdateId("");
       setUpdateTitle("");
       setUpdateContent("");
+      setUpdateShortUrl("");
     } catch (err: any) {
       setMessage(`Error: ${err.message}`);
     }
@@ -259,6 +262,13 @@ export default function TestPostPage() {
             className="p-2 border rounded-md w-full mb-2"
             rows={3}
           />
+<input
+    type="text"
+    value={updateShortUrl}
+    onChange={(e) => setUpdateShortUrl(e.target.value)}
+    placeholder="Short URL mới... (ví dụ: my-post-is-dumb)"
+    className="p-2 border rounded-md w-full mb-2"
+  />
           <button
             onClick={handleUpdate}
             className="bg-yellow-600 text-white py-2 rounded-md hover:bg-yellow-700"
