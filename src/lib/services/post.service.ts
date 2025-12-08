@@ -1,19 +1,11 @@
 import {
   IPostRepository,
+  IPostService,
   Post,
   CreatePostDTO,
   UpdatePostDTO,
   PostFilters,
 } from "../types/post.type";
-
-export interface IPostService {
-  createPost(data: CreatePostDTO): Promise<Post>;
-  getPostById(id: string): Promise<Post | null>;
-  getPosts(filters?: PostFilters): Promise<Post[]>;
-  getPostsByAuthor(authorId: string): Promise<Post[]>;
-  updatePost(id: string, data: UpdatePostDTO): Promise<Post>;
-  deletePost(id: string): Promise<void>;
-}
 
 export class PostService implements IPostService {
   constructor(private postRepository: IPostRepository) {}
@@ -27,11 +19,7 @@ export class PostService implements IPostService {
     if (!data.content || data.content.trim().length === 0) {
       throw new Error("Post content is required");
     }
-
-    if (!data.author_id) {
-      throw new Error("Author ID is required");
-    }
-
+    
     return await this.postRepository.create(data);
   }
 
@@ -41,13 +29,13 @@ export class PostService implements IPostService {
 
   async getPosts(filters?: PostFilters): Promise<Post[]> {
     if (filters?.authorId) {
-      return await this.postRepository.findByAuthorId(filters.authorId);
+      return await this.postRepository.findByUserId(filters.authorId);
     }
     return await this.postRepository.findAll();
   }
 
   async getPostsByAuthor(authorId: string): Promise<Post[]> {
-    return await this.postRepository.findByAuthorId(authorId);
+    return await this.postRepository.findByUserId(authorId);
   }
 
   async updatePost(id: string, data: UpdatePostDTO): Promise<Post> {
