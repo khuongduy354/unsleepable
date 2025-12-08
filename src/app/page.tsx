@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import UploadButton from "./auth/ui/upload.tsx";
 
 export default function TestPostPage() {
   // State quản lý Input
@@ -20,6 +21,9 @@ export default function TestPostPage() {
   const [result, setResult] = useState("");
   const [message, setMessage] = useState("");
 
+  const [uploading, setUploading] = useState(false);
+  const [fileUrl, setFileUrl] = useState<string | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   // --- CÁC HÀM GỌI API (FETCH) ---
 
   // 🔍 1. Tìm kiếm theo ID (GET /api/post/[id])
@@ -147,6 +151,7 @@ export default function TestPostPage() {
     }
   };
 
+
   // --- PHẦN GIAO DIỆN (GIỮ NGUYÊN KHÔNG ĐỔI) ---
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col items-center p-6">
@@ -171,7 +176,7 @@ export default function TestPostPage() {
             </button>
           </div>
         </section>
-
+<UploadButton />
         {/* SEARCH USER ID */}
         <section>
           <h2 className="text-xl font-bold mb-3">🔍 Tìm Post theo User ID</h2>
