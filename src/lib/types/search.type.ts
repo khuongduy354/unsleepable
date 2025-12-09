@@ -1,7 +1,13 @@
 // DTOs + Interfaces for Search functionality
 
+export interface TagFilter {
+  tags: string[];
+  operator: 'AND' | 'OR' | 'NOT';
+}
+
 export interface SearchPostsDTO {
   query: string;
+  tagFilters?: TagFilter[]; // Multiple tag groups with different operators
   communityId?: string;
   limit?: number;
   offset?: number;

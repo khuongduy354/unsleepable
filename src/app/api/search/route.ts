@@ -8,8 +8,12 @@ export async function GET(req: NextRequest) {
     const communityId = searchParams.get("communityId");
     const limit = searchParams.get("limit");
     const offset = searchParams.get("offset");
+    
+    // Tag filters: orTags, andTags, notTags (comma-separated)
+    const orTags = searchParams.get("orTags");
+    const andTags = searchParams.get("andTags");
+    const notTags = searchParams.get("notTags");
 
-    // Validate required query parameter
     if (!query) {
       return NextResponse.json(
         { error: "Query parameter 'q' is required" },
@@ -19,8 +23,29 @@ export async function GET(req: NextRequest) {
 
     const searchService = await getSearchService();
     
+    const tagFilters = [];
+    if (orTags) {
+      tagFilters.push({
+        tags: orTags.split(',').map(t => t.trim()).filter(t => t.length > 0),
+        operator: 'OR' as const
+      });
+    }
+    if (andTags) {
+      tagFilters.push({
+        tags: andTags.split(',').map(t => t.trim()).filter(t => t.length > 0),
+        operator: 'AND' as const
+      });
+    }
+    if (notTags) {
+      tagFilters.push({
+        tags: notTags.split(',').map(t => t.trim()).filter(t => t.length > 0),
+        operator: 'NOT' as const
+      });
+    }
+    
     const results = await searchService.searchPosts({
       query,
+      tagFilters: tagFilters.length > 0 ? tagFilters : undefined,
       communityId: communityId || undefined,
       limit: limit ? parseInt(limit) : undefined,
       offset: offset ? parseInt(offset) : undefined,
