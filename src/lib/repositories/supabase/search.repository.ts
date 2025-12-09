@@ -3,7 +3,7 @@ import {
   ISearchRepository,
   SearchPostsDTO,
   PostSearchResult,
-} from "../types/search.type";
+} from "@/lib/types/search.type";
 
 export class SupabaseSearchRepository implements ISearchRepository {
   constructor(private supabase: SupabaseClient) {}
