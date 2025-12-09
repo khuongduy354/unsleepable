@@ -5,6 +5,8 @@ import { PostService } from "../services/post.service";
 import { SupabasePostRepository } from "../repositories/supabase.repository";
 import { SearchService } from "../services/search.service";
 import { SupabaseSearchRepository } from "../repositories/supabase/search.repository";
+import { NotificationService } from "../services/notification.service";
+import { SupabaseNotificationRepository } from "../repositories/supabase/notification.repository";
 
 /**
  * Dependency Injection Container
@@ -38,9 +40,17 @@ export async function setupSearchService() {
   return searchService;
 }
 
+export async function setupNotificationService() {
+  const supabase = await createClient();
+  const notificationRepository = new SupabaseNotificationRepository(supabase);
+  const notificationService = new NotificationService(notificationRepository);
+  return notificationService;
+}
+
 let communityServiceInstance: CommunityService | null = null;
 let postServiceInstance: PostService | null = null;
 let searchServiceInstance: SearchService | null = null;
+let notificationServiceInstance: NotificationService | null = null;
 
 export async function getCommunityService(): Promise<CommunityService> {
   if (!communityServiceInstance) {
@@ -61,4 +71,11 @@ export async function getSearchService(): Promise<SearchService> {
     searchServiceInstance = await setupSearchService();
   }
   return searchServiceInstance;
+}
+
+export async function getNotificationService(): Promise<NotificationService> {
+  if (!notificationServiceInstance) {
+    notificationServiceInstance = await setupNotificationService();
+  }
+  return notificationServiceInstance;
 }
