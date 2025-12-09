@@ -1,5 +1,5 @@
 import { createClient } from "@/utils/supabase/server";
-import { CommunityService } from "../services/community.service";
+import { CommunityService } from "../../services/community.service";
 import { SupabaseCommunityRepository } from "@/lib/repositories/supabase/community.repository";
 
 /**

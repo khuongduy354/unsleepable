@@ -22,6 +22,7 @@ export interface ICommunityService {
     data: UpdateCommunityDTO
   ): Promise<Community>;
   deleteCommunity(id: string, userId: string): Promise<void>;
+  syncTagToCommunity(communityId: string, tagName: string): Promise<void>;
 }
 
 export class CommunityService implements ICommunityService {
@@ -44,6 +45,10 @@ export class CommunityService implements ICommunityService {
     // Set default visibility if not provided
     if (!data.visibility) {
       data.visibility = "public";
+    }
+
+    if (!data.tags) {
+      data.tags = [];
     }
 
     return await this.communityRepository.create(data);
@@ -126,6 +131,24 @@ export class CommunityService implements ICommunityService {
       }
     }
 
+    if (data.tags !== undefined) {
+      if (!Array.isArray(data.tags)) {
+        throw new Error("Tags must be provided as an array");
+      }
+      if (data.tags.length > 10) {
+        throw new Error("Cannot add more than 10 tags to a community");
+      }
+
+      for (const tag of data.tags) {
+        if (typeof tag !== 'string' || tag.trim().length === 0) {
+          throw new Error("All tags must be non-empty strings");
+        }
+        // Giới hạn độ dài từng tag (Ví dụ: Tối đa 50 ký tự)
+        if (tag.length > 50) { 
+          throw new Error("Each tag must be less than 50 characters");
+        }
+      }
+    }
     // Check ownership
     const isOwner = await this.communityRepository.isOwner(id, userId);
     if (!isOwner) {
@@ -157,5 +180,8 @@ export class CommunityService implements ICommunityService {
     }
 
     await this.communityRepository.delete(id);
+  }
+  async syncTagToCommunity(communityId: string, tagName: string): Promise<void> {
+    await this.communityRepository.addTagToCommunityArray(communityId, tagName);
   }
 }
