@@ -12,6 +12,7 @@ import {
   ICommunityRepository,
   CommunityFilters,
   PaginatedCommunities,
+  CommunityStatsDTO
 } from "../../types/community.type";
 
 // export class SupabasePostRepository implements IPostRepository {
@@ -305,5 +306,53 @@ export class SupabaseCommunityRepository implements ICommunityRepository {
     }
 
     return data?.role === "admin";
+  }
+  async getCommunityStats(communityId: string): Promise<CommunityStatsDTO> {
+    // count total member
+    const { count: memberCount, error: memberError } = await this.supabase
+      .from("CommunityMember")
+      .select("user_account_id", { count: 'exact', head: true }) 
+      .eq("community_id", communityId);
+
+    if (memberError) {
+      throw new Error(`Failed to count members: ${memberError.message}`);
+    }
+
+    // count total posts
+    const { count: postCount, error: postError } = await this.supabase
+      .from("Post")
+      .select("id", { count: 'exact', head: true })
+      .eq("community_id", communityId);
+
+    if (postError) {
+      throw new Error(`Failed to count posts: ${postError.message}`);
+    }
+
+    const totalPosts = postCount || 0;
+
+    // count active percentage
+    const { data: activePostsResult, error: activePostError } = await this.supabase
+      .rpc("count_active_posts_for_community", { community_id_param: communityId });
+      
+    if (activePostError) {
+      throw new Error(`Failed to count active posts via RPC: ${activePostError.message}`);
+    }
+
+    const activePostCount = activePostsResult && activePostsResult.length > 0 
+        ? activePostsResult[0].active_post_count 
+        : 0;
+
+    let activeEngagementRate = 0;
+    if (totalPosts > 0) {
+        // Tỷ lệ = (Số Posts hoạt động) / (Tổng số Posts)
+        activeEngagementRate = activePostCount / totalPosts; 
+    }
+
+    return {
+      communityId: communityId,
+      totalPosts: totalPosts,
+      totalMembers: memberCount || 0,
+      activeEngagementRate: activeEngagementRate 
+    };
   }
 }
