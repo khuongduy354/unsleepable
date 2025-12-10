@@ -1,15 +1,20 @@
 import {
-  // getPostService as originalGetPostService,
+  getPostService as originalGetPostService,
   getCommunityService as originalGetCommunityService,
+  getReportService as originalGetReportService,
 } from "./production-setup";
 
 class Service {
-  // async getPostService() {
-  //   return await originalGetPostService();
-  // }
+  async getPostService() {
+    return await originalGetPostService();
+  }
 
   async getCommunityService() {
     return await originalGetCommunityService();
+  }
+
+  async getReportService() {
+    return await originalGetReportService();
   }
 }
 
