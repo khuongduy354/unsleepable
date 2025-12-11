@@ -1,7 +1,7 @@
 // File: src/app/api/posts/[id]/tags/route.ts
 
 import { NextRequest, NextResponse } from "next/server";
-import { service } from "@/lib/setup/tag/index";
+import { service } from "@/lib/setup/index";
 import { requireAuth } from "@/lib/auth-middleware";
 
 // Interface for the expected request body for POST

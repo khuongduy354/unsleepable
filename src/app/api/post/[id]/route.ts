@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { service } from "@/lib/setup/post/index";
+import { service } from "@/lib/setup/index";
 import { UpdatePostDTO } from "@/lib/types/post.type";
 
 // GET /api/posts/[id] - Lấy chi tiết bài viết

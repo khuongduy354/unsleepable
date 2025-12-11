@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { service } from "@/lib/setup/community/index";
+import { service } from "@/lib/setup/index";
 import {
   CreateCommunityDTO,
   CommunityFilters,

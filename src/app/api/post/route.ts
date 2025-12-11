@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { service } from "@/lib/setup/post/index";
+import { service } from "@/lib/setup/index";
 import { CreatePostDTO, PostFilters } from "@/lib/types/post.type";
 
 export async function GET(request: NextRequest) {
