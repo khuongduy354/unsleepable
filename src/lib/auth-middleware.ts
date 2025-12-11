@@ -1,23 +1,36 @@
-import { NextRequest } from "next/server";
+import { cookies } from "next/headers";
+import { createClient } from "@/utils/supabase/server";
+import type { NextRequest } from "next/server";
 
-/**
- * Mock authentication middleware for extracting user ID from request headers
- * In production, this should be replaced with actual authentication logic
- *
- * For now, the frontend should include a 'x-user-id' header with the user's ID
- */
+// export async function getAuthenticatedUser(request?: NextRequest) {
+//   const cookieStore = request ? request.cookies : cookies();
 
-export function extractUserId(request: NextRequest): string | null {
-  const userId = request.headers.get("x-user-id");
-  return userId;
-}
+//   const supabase = createClient(
+//     process.env.NEXT_PUBLIC_SUPABASE_URL!,
+//     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+//     {
+//       cookies: {
+//         get: (name: string) => cookieStore.get(name)?.value,
+//       },
+//     }
+//   );
 
-export function requireAuth(request: NextRequest): string {
-  const userId = extractUserId(request);
+//   const {
+//     data: { user },
+//     error,
+//   } = await supabase.auth.getUser();
 
-  if (!userId) {
-    throw new Error("Unauthorized: User ID not provided in headers");
-  }
+//   if (error || !user) return null;
 
-  return userId;
-}
+//   return user;
+// }
+
+// export async function requireAuth(request?: NextRequest) {
+//   const user = await getAuthenticatedUser(request);
+
+//   if (!user) {
+//     throw new Error("Unauthorized: Supabase token missing or invalid");
+//   }
+
+//   return user;
+// }
