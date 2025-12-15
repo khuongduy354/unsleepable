@@ -3,7 +3,8 @@ import {
   getCommunityService as originalGetCommunityService,
   getNotificationService as originalGetNotificationService,
   getTagService as originalGetTagService,
-  getMessageService as originalGetMessageService
+  getMessageService as originalGetMessageService,
+  getReportService as originalGetReportService,
 } from "./production-setup";
 
 class Service {
@@ -23,7 +24,10 @@ class Service {
   }
   
   async getMessageService() {
-    return await originalGetMessageService();
+    return await originalGetMessageService(); 
+  }
+  async getReportService() {
+    return await originalGetReportService();
   }
 }
 

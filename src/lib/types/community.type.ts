@@ -35,6 +35,7 @@ export interface ICommunityRepository {
   delete(id: string): Promise<void>;
   isOwner(communityId: string, userId: string): Promise<boolean>;
   addTagToCommunityArray(communityId: string, tagName: string): Promise<void>;
+  getCommunityStats(communityId: string): Promise<CommunityStatsDTO>;
 }
 
 // Entity
@@ -53,4 +54,11 @@ export interface PaginatedCommunities {
   page: number;
   limit: number;
   totalPages: number;
+}
+
+export interface CommunityStatsDTO {
+  communityId: string;
+  totalPosts: number;
+  totalMembers: number;
+  activeEngagementRate: number; 
 }

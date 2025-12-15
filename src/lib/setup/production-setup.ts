@@ -16,6 +16,9 @@ import { SupabaseTagRepository } from "@/lib/repositories/supabase/tag.repositor
 
 import { MessageService } from "../services/message.service";
 import { SupabaseDirectMessageRepository } from "@/lib/repositories/supabase/message.repository"; 
+import { ReportService } from "../services/report.service"; 
+import { SupabaseReportRepository } from "@/lib/repositories/supabase/report.repository"; 
+// import { IReportService } from "../../services/ReportService";
 /**
  * Dependency Injection Container
  * Sets up and wires together all services and repositories
@@ -66,6 +69,12 @@ export async function getCommunityService(): Promise<CommunityService> {
   }
   return communityServiceInstance;
 }
+
+
+/**
+ * Dependency Injection Container
+ * Sets up and wires together all services and repositories
+ */
 
 export async function setupPostService() {
   // Create Supabase client
@@ -146,4 +155,28 @@ export async function getMessageService(): Promise<MessageService> {
       messageServiceInstance = await setupMessageService();
   }
   return messageServiceInstance;
+}
+export async function setupReportService(): Promise<ReportService> {
+    // Create Supabase client
+    const supabase = await createClient();
+
+    // 1. Initialize repository with Supabase client
+    const reportRepository = new SupabaseReportRepository(supabase);
+
+    // 2. Initialize service with repository
+    const reportService = new ReportService(reportRepository);
+
+    return reportService;
+}
+
+// Global instance variable
+let reportServiceInstance: ReportService | null = null;
+
+// Hàm Public để lấy instance
+export async function getReportService(): Promise<ReportService> {
+    if (!reportServiceInstance) {
+        reportServiceInstance = await setupReportService();
+    }
+    // Trả về instance đã được khởi tạo
+    return reportServiceInstance; 
 }

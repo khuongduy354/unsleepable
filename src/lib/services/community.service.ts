@@ -5,6 +5,7 @@ import {
   UpdateCommunityDTO,
   CommunityFilters,
   PaginatedCommunities,
+  CommunityStatsDTO
 } from "../types/community.type";
 
 export interface ICommunityService {
@@ -23,6 +24,7 @@ export interface ICommunityService {
   ): Promise<Community>;
   deleteCommunity(id: string, userId: string): Promise<void>;
   syncTagToCommunity(communityId: string, tagName: string): Promise<void>;
+  getStats(id: string, userId: string): Promise<CommunityStatsDTO>;
 }
 
 export class CommunityService implements ICommunityService {
@@ -182,6 +184,24 @@ export class CommunityService implements ICommunityService {
     await this.communityRepository.delete(id);
   }
   async syncTagToCommunity(communityId: string, tagName: string): Promise<void> {
-    await this.communityRepository.addTagToCommunityArray(communityId, tagName);
+    await this.communityRepository.addTagToCommunityArray(communityId, tagName); 
+  }
+
+  async getStats(id: string, userId: string): Promise<CommunityStatsDTO> {
+    if (!id) {
+      throw new Error("Community ID is required.");
+    }
+
+    const community = await this.communityRepository.findById(id);
+    if (!community) {
+      throw new Error("Community not found.");
+    }
+    // Check ownership
+    const isOwner = await this.communityRepository.isOwner(id, userId);
+    if (!isOwner) {
+      throw new Error("User is not the owner of this community");
+    }
+
+    return await this.communityRepository.getCommunityStats(id);
   }
 }
