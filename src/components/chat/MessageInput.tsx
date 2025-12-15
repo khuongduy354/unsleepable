@@ -78,9 +78,8 @@ const MessageInput: React.FC<MessageInputProps> = ({ currentUserId, partnerId })
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
         ) : (
-            // Icon mũi tên (Arrow)
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 text-white transform rotate-45 -mt-1 ml-0.5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0110.887 5.006zM18 12L21.037 3.328A59.768 59.768 0 0110.887 5.006zM9.53 17.653A27.574 27.574 0 015 12c0-1.874.225-3.725.669-5.467L12 12M18 12L9.53 17.653M18 12L9.53 17.653" />
+            <svg className="w-[32px] h-[32px] text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+            <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16.881V7.119a1 1 0 0 1 1.636-.772l5.927 4.881a1 1 0 0 1 0 1.544l-5.927 4.88A1 1 0 0 1 8 16.882Z"/>
             </svg>
         )}
       </button>

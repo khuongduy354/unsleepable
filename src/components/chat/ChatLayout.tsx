@@ -7,8 +7,8 @@ import ConversationList from './ConversationList'; // SỬ DỤNG COMPONENT LIST
 // --- Dữ liệu Mẫu (Mock Data) ---
 const mockUsers = [
   { id: "7d8d31c7-a660-41fe-9109-76a98e7bbfcd", name: "alice_wonder", lastMessage: "Thanks for the help!", time: "5m ago", unreadCount: 2 },
-  { id: "00000000-0000-0000-0000-000000000003", name: "bob_builder", lastMessage: "See you tomorrow", time: "1h ago", unreadCount: 0 },
-  { id: "00000000-0000-0000-0000-000000000004", name: "jane_smith", lastMessage: "Great idea!", time: "1 day ago", unreadCount: 1 },
+  { id: "5a92bef0-270a-4e8b-b590-a6cdbf703d7b", name: "bob_builder", lastMessage: "See you tomorrow", time: "1h ago", unreadCount: 0 },
+  { id: "8b505775-f2d2-46f9-939b-a2cee13812d1", name: "jane_smith", lastMessage: "Great idea!", time: "1 day ago", unreadCount: 1 },
 ];
 
 const TEMP_CURRENT_USER_ID = "d98b88c0-f5f1-4f5a-aed1-56c8937f2f33"; 

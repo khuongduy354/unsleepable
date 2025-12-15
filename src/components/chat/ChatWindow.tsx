@@ -26,7 +26,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ currentUserId, partnerId, partn
   const [messages, setMessages] = useState<DirectMessage[]>([]);
   const [loading, setLoading] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null); // Ref cho cuộn tự động
-
+  
+  const partnerInitial = partnerName[0]?.toUpperCase() || 'P';
   // --- LOGIC REALTIME/HISTORY (Tương tự RealtimeListener) ---
 
   const scrollToBottom = () => {
@@ -102,6 +103,22 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ currentUserId, partnerId, partn
   return (
     <div className="flex flex-col h-full">
       {/* 1. Khu vực hiển thị tin nhắn */}
+      <div className="p-3 border-b border-gray-200 bg-white shadow-sm flex items-center space-x-3 sticky top-0 z-10">
+          {/* Avatar */}
+          <div className="h-10 w-10 min-w-10 bg-indigo-100 rounded-full flex items-center justify-center text-lg font-bold text-indigo-700">
+              {partnerInitial}
+          </div>
+          
+          {/* Tên và trạng thái */}
+          <div>
+              <h3 className="text-lg font-semibold text-gray-900">
+                  {partnerName}
+              </h3>
+              <p className="text-xs text-green-500 font-medium">
+                  Online
+              </p>
+          </div>
+      </div>
       <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-gray-100">
         {loading && <div className="text-center text-gray-500">Loading messages...</div>}
         
@@ -145,7 +162,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ currentUserId, partnerId, partn
         />
       </div>
     </div>
-  );
+  );  
 };
 
 export default ChatWindow;
