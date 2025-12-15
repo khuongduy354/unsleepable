@@ -117,6 +117,7 @@ export class SupabaseCommunityRepository implements ICommunityRepository {
         name: data.name,
         description: data.description || null,
         visibility: data.visibility || "public",
+        tags: data.tags,
       })
       .select()
       .single();
@@ -305,5 +306,29 @@ export class SupabaseCommunityRepository implements ICommunityRepository {
     }
 
     return data?.role === "admin";
+  }
+  async addTagToCommunityArray(communityId: string, tagName: string): Promise<void> {
+    const { data: community, error: fetchError } = await this.supabase
+      .from("Community")
+      .select("tags")
+      .eq("id", communityId)
+      .single();
+    if (fetchError || !community) throw new Error("Community not found or fetch failed.");
+
+    const currentTags: string[] = community.tags || [];
+
+    if (currentTags.map(t => t.toLowerCase()).includes(tagName.toLowerCase())) {
+        return;
+    }
+
+    // Thêm tag mới vào mảng
+    const updatedTags = [...currentTags, tagName];
+
+    const { error: updateError } = await this.supabase
+      .from("Community")
+      .update({ tags: updatedTags })
+      .eq("id", communityId);
+        
+    if (updateError) throw new Error(`Failed to sync tag to community array: ${updateError.message}`);
   }
 }
