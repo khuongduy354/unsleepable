@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import UploadButton from "./auth/ui/upload.tsx";
+import ShortUrlSetter from "./auth/ui/shortUrl.tsx" 
 
 export default function TestPostPage() {
   // State quản lý Input
@@ -15,11 +17,14 @@ export default function TestPostPage() {
   const [updateId, setUpdateId] = useState("");
   const [updateTitle, setUpdateTitle] = useState("");
   const [updateContent, setUpdateContent] = useState("");
-
+  const [updateShortUrl, setUpdateShortUrl] = useState("");
   // State hiển thị kết quả
   const [result, setResult] = useState("");
   const [message, setMessage] = useState("");
 
+  const [uploading, setUploading] = useState(false);
+  const [fileUrl, setFileUrl] = useState<string | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   // --- CÁC HÀM GỌI API (FETCH) ---
 
   // 🔍 1. Tìm kiếm theo ID (GET /api/post/[id])
@@ -108,6 +113,7 @@ export default function TestPostPage() {
       const payload = {
         title: updateTitle || undefined,
         content: updateContent || undefined,
+        shortUrl: updateShortUrl || undefined,
       };
 
       const res = await fetch(`/api/post/${updateId}`, {
@@ -123,6 +129,7 @@ export default function TestPostPage() {
       setUpdateId("");
       setUpdateTitle("");
       setUpdateContent("");
+      setUpdateShortUrl("");
     } catch (err: any) {
       setMessage(`Error: ${err.message}`);
     }
@@ -146,6 +153,7 @@ export default function TestPostPage() {
       setMessage(`Error: ${err.message}`);
     }
   };
+
 
   // --- PHẦN GIAO DIỆN (GIỮ NGUYÊN KHÔNG ĐỔI) ---
   return (
@@ -171,7 +179,7 @@ export default function TestPostPage() {
             </button>
           </div>
         </section>
-
+<UploadButton />
         {/* SEARCH USER ID */}
         <section>
           <h2 className="text-xl font-bold mb-3">🔍 Tìm Post theo User ID</h2>
@@ -254,6 +262,13 @@ export default function TestPostPage() {
             className="p-2 border rounded-md w-full mb-2"
             rows={3}
           />
+<input
+    type="text"
+    value={updateShortUrl}
+    onChange={(e) => setUpdateShortUrl(e.target.value)}
+    placeholder="Short URL mới... (ví dụ: my-post-is-dumb)"
+    className="p-2 border rounded-md w-full mb-2"
+  />
           <button
             onClick={handleUpdate}
             className="bg-yellow-600 text-white py-2 rounded-md hover:bg-yellow-700"
