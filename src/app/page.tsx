@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import UploadButton from "./auth/ui/upload.tsx";
-import ShortUrlSetter from "./auth/ui/shortUrl.tsx" 
+import { UploadButton } from "./auth/ui/upload.tsx";
+// import ShortUrlSetter from "./auth/ui/shortUrl.tsx" 
 
 export default function TestPostPage() {
   // State quản lý Input
