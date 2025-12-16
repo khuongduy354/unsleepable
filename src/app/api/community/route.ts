@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     // Extract user ID from mock auth
-    const userId = requireAuth(request);
+    const userId = await requireAuth(request);
 
     const communityService = await service.getCommunityService();
     const body = await request.json();

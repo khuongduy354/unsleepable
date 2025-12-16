@@ -7,6 +7,7 @@ import { requireAuth } from "@/lib/auth-middleware";
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
+  
 ) {
   try {
     const communityService = await service.getCommunityService();
@@ -39,7 +40,7 @@ export async function PATCH(
 ) {
   try {
     // Extract user ID from mock auth
-    const userId = requireAuth(request);
+    const userId = await requireAuth(request);
 
     const communityService = await service.getCommunityService();
     const body = await request.json();
@@ -85,7 +86,7 @@ export async function DELETE(
 ) {
   try {
     // Extract user ID from mock auth
-    const userId = requireAuth(request);
+    const userId = await requireAuth(request);
 
     const communityService = await service.getCommunityService();
     await communityService.deleteCommunity(params.id, userId);

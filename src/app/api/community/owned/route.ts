@@ -6,7 +6,7 @@ import { requireAuth } from "@/lib/auth-middleware";
 export async function GET(request: NextRequest) {
   try {
     // Extract user ID from mock auth
-    const userId = requireAuth(request);
+    const userId = await requireAuth(request);
 
     const communityService = await service.getCommunityService();
 
