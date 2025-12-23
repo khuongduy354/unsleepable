@@ -4,14 +4,21 @@ import { Comment } from "@/lib/types/post.type";
 
 export const commentApi = {
   // Get comments by post ID
-  async getByPostId(postId: string): Promise<Comment[]> {
+  async getByPost(postId: string): Promise<{ comments: Comment[] }> {
     const res = await fetch(`/api/comment?postId=${postId}`);
 
     if (!res.ok) {
       throw new Error("Failed to fetch comments");
     }
 
-    return await res.json();
+    const data = await res.json();
+    return { comments: data.comments || data };
+  },
+
+  // Alias for backward compatibility
+  async getByPostId(postId: string): Promise<Comment[]> {
+    const result = await this.getByPost(postId);
+    return result.comments;
   },
 
   // Get replies for a comment
@@ -38,10 +45,12 @@ export const commentApi = {
       body: JSON.stringify(data),
     });
 
+    const responseData = await res.json();
+
     if (!res.ok) {
-      throw new Error("Failed to create comment");
+      throw new Error(responseData.error || "Failed to create comment");
     }
 
-    return await res.json();
+    return responseData.comment || responseData;
   },
 };

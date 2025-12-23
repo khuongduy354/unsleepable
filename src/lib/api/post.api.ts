@@ -38,7 +38,12 @@ export const postApi = {
   },
 
   // Create new post
-  async create(payload: { title: string; content: string; user_id?: string }) {
+  async create(payload: {
+    title: string;
+    content: string;
+    user_id: string;
+    community_id: string;
+  }) {
     const res = await fetch("/api/post", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -79,15 +84,41 @@ export const postApi = {
   },
 
   // Delete post
-  async delete(id: string) {
+  async delete(id: string, userId?: string) {
+    const headers: HeadersInit = {};
+    if (userId) {
+      headers["x-user-id"] = userId;
+    }
+
     const res = await fetch(`/api/post/${id}`, {
       method: "DELETE",
+      headers,
     });
 
     const data = await res.json();
 
     if (!res.ok) {
       throw new Error(data.error || "Failed to delete post");
+    }
+
+    return data;
+  },
+
+  // React to post (like/dislike)
+  async react(postId: string, userId: string, type: "like" | "dislike") {
+    const res = await fetch(`/api/post/${postId}/react`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-user-id": userId,
+      },
+      body: JSON.stringify({ type }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.error || "Failed to react to post");
     }
 
     return data;

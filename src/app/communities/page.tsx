@@ -2,6 +2,30 @@
 
 import { useState, useEffect } from "react";
 import { communityApi } from "@/lib/api";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  CardFooter,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Loader2, Plus, Edit, Trash2, Users, Lock, Globe } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import AppLayout from "@/components/AppLayout";
 
 interface Community {
   id: string;
@@ -29,6 +53,7 @@ export default function CommunitiesPage() {
   const [editingCommunity, setEditingCommunity] = useState<Community | null>(
     null
   );
+  const { toast } = useToast();
 
   // Form states
   const [formData, setFormData] = useState({
@@ -82,7 +107,11 @@ export default function CommunitiesPage() {
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!userId) {
-      setError("Please enter a user ID first");
+      toast({
+        title: "Error",
+        description: "Please enter a user ID first",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -92,15 +121,25 @@ export default function CommunitiesPage() {
     try {
       await communityApi.create(userId, formData);
 
+      toast({
+        title: "Success",
+        description: "Community created successfully",
+      });
+
       // Reset form and refresh data
       setFormData({ name: "", description: "", visibility: "public" });
       setShowCreateForm(false);
       await fetchCommunities(currentPage);
       await fetchOwnedCommunities();
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to create community"
-      );
+      const errorMsg =
+        err instanceof Error ? err.message : "Failed to create community";
+      setError(errorMsg);
+      toast({
+        title: "Error",
+        description: errorMsg,
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -117,15 +156,25 @@ export default function CommunitiesPage() {
     try {
       await communityApi.update(editingCommunity.id, userId, formData);
 
+      toast({
+        title: "Success",
+        description: "Community updated successfully",
+      });
+
       // Reset form and refresh data
       setFormData({ name: "", description: "", visibility: "public" });
       setEditingCommunity(null);
       await fetchCommunities(currentPage);
       await fetchOwnedCommunities();
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to update community"
-      );
+      const errorMsg =
+        err instanceof Error ? err.message : "Failed to update community";
+      setError(errorMsg);
+      toast({
+        title: "Error",
+        description: errorMsg,
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -134,7 +183,11 @@ export default function CommunitiesPage() {
   // Delete community
   const handleDelete = async (communityId: string) => {
     if (!userId) {
-      setError("Please enter a user ID first");
+      toast({
+        title: "Error",
+        description: "Please enter a user ID first",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -146,12 +199,22 @@ export default function CommunitiesPage() {
     try {
       await communityApi.delete(communityId, userId);
 
+      toast({
+        title: "Success",
+        description: "Community deleted successfully",
+      });
+
       await fetchCommunities(currentPage);
       await fetchOwnedCommunities();
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to delete community"
-      );
+      const errorMsg =
+        err instanceof Error ? err.message : "Failed to delete community";
+      setError(errorMsg);
+      toast({
+        title: "Error",
+        description: errorMsg,
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -169,165 +232,225 @@ export default function CommunitiesPage() {
   };
 
   return (
-    <div className="min-h-screen p-8 bg-gray-50">
-      <div className="max-w-6xl mx-auto">
-        <h1 className="text-4xl font-bold mb-8">Communities</h1>
-
-        {/* User ID Input (Mock Auth) */}
-        <div className="mb-8 p-4 bg-yellow-100 border border-yellow-400 rounded">
-          <label className="block mb-2 font-semibold">
-            Mock User ID (for testing):
-          </label>
-          <input
-            type="text"
-            value={userId}
-            // defaultValue={"d2f1d6c0-47b4-4e3d-9ce4-5cb9033e1234"}
-            onChange={(e) => setUserId(e.target.value)}
-            placeholder="Enter a user ID"
-            className="w-full p-2 border rounded"
-          />
-          <p className="text-sm mt-2 text-gray-600">
-            This simulates authentication. Use a real user ID from your
-            database.
+    <AppLayout>
+      <div className="container mx-auto py-8 px-4 max-w-7xl">
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold tracking-tight">Communities</h1>
+          <p className="text-muted-foreground mt-2">
+            Discover and join communities
           </p>
         </div>
 
+        {/* User ID Input (Mock Auth) */}
+        <Alert className="mb-6 border-yellow-400 bg-yellow-50 dark:bg-yellow-950">
+          <AlertDescription>
+            <Label htmlFor="userId" className="font-semibold mb-2 block">
+              Mock User ID (for testing)
+            </Label>
+            <Input
+              id="userId"
+              type="text"
+              value={userId}
+              onChange={(e) => setUserId(e.target.value)}
+              placeholder="Enter a user ID"
+              className="mb-2"
+            />
+            <p className="text-sm text-muted-foreground">
+              This simulates authentication. Use a real user ID from your
+              database.
+            </p>
+          </AlertDescription>
+        </Alert>
+
         {/* Error Display */}
         {error && (
-          <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
-            {error}
-          </div>
+          <Alert variant="destructive" className="mb-6">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
         )}
 
         {/* Create/Edit Form */}
         {(showCreateForm || editingCommunity) && (
-          <div className="mb-8 p-6 bg-white border rounded shadow">
-            <h2 className="text-2xl font-bold mb-4">
-              {editingCommunity ? "Edit Community" : "Create Community"}
-            </h2>
-            <form onSubmit={editingCommunity ? handleUpdate : handleCreate}>
-              <div className="mb-4">
-                <label className="block mb-2 font-semibold">Name *</label>
-                <input
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) =>
-                    setFormData({ ...formData, name: e.target.value })
-                  }
-                  className="w-full p-2 border rounded"
-                  required
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block mb-2 font-semibold">Description</label>
-                <textarea
-                  value={formData.description}
-                  onChange={(e) =>
-                    setFormData({ ...formData, description: e.target.value })
-                  }
-                  className="w-full p-2 border rounded"
-                  rows={3}
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block mb-2 font-semibold">Visibility</label>
-                <select
-                  value={formData.visibility}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      visibility: e.target.value as "public" | "private",
-                    })
-                  }
-                  className="w-full p-2 border rounded"
-                >
-                  <option value="public">Public</option>
-                  <option value="private">Private</option>
-                </select>
-              </div>
-              <div className="flex gap-2">
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-400"
-                >
-                  {loading
-                    ? "Saving..."
-                    : editingCommunity
-                    ? "Update"
-                    : "Create"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowCreateForm(false);
-                    setEditingCommunity(null);
-                    setFormData({
-                      name: "",
-                      description: "",
-                      visibility: "public",
-                    });
-                  }}
-                  className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </div>
+          <Card className="mb-8">
+            <CardHeader>
+              <CardTitle>
+                {editingCommunity ? "Edit Community" : "Create Community"}
+              </CardTitle>
+              <CardDescription>
+                {editingCommunity
+                  ? "Update your community details"
+                  : "Start a new community"}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form
+                onSubmit={editingCommunity ? handleUpdate : handleCreate}
+                className="space-y-4"
+              >
+                <div className="space-y-2">
+                  <Label htmlFor="name">Name *</Label>
+                  <Input
+                    id="name"
+                    type="text"
+                    value={formData.name}
+                    onChange={(e) =>
+                      setFormData({ ...formData, name: e.target.value })
+                    }
+                    required
+                    placeholder="Enter community name"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="description">Description</Label>
+                  <Textarea
+                    id="description"
+                    value={formData.description}
+                    onChange={(e) =>
+                      setFormData({ ...formData, description: e.target.value })
+                    }
+                    placeholder="Describe your community"
+                    rows={3}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="visibility">Visibility</Label>
+                  <Select
+                    value={formData.visibility}
+                    onValueChange={(value: string) =>
+                      setFormData({
+                        ...formData,
+                        visibility: value as "public" | "private",
+                      })
+                    }
+                  >
+                    <SelectTrigger id="visibility">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="public">
+                        <div className="flex items-center gap-2">
+                          <Globe className="h-4 w-4" />
+                          <span>Public</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="private">
+                        <div className="flex items-center gap-2">
+                          <Lock className="h-4 w-4" />
+                          <span>Private</span>
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex gap-2 pt-4">
+                  <Button type="submit" disabled={loading}>
+                    {loading && (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    )}
+                    {loading
+                      ? "Saving..."
+                      : editingCommunity
+                      ? "Update"
+                      : "Create"}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setShowCreateForm(false);
+                      setEditingCommunity(null);
+                      setFormData({
+                        name: "",
+                        description: "",
+                        visibility: "public",
+                      });
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
         )}
 
         {/* Create Button */}
         {!showCreateForm && !editingCommunity && (
-          <button
-            onClick={() => setShowCreateForm(true)}
-            className="mb-6 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-          >
-            + Create Community
-          </button>
+          <Button onClick={() => setShowCreateForm(true)} className="mb-6">
+            <Plus className="mr-2 h-4 w-4" />
+            Create Community
+          </Button>
         )}
 
         {/* Owned Communities */}
         {userId && ownedCommunities.length > 0 && (
           <div className="mb-8">
             <h2 className="text-2xl font-bold mb-4">Your Communities</h2>
-            <div className="grid gap-4">
+            <div className="grid gap-4 md:grid-cols-2">
               {ownedCommunities.map((community) => (
-                <div
+                <Card
                   key={community.id}
-                  className="p-4 bg-green-50 border border-green-200 rounded shadow"
+                  className="border-green-200 bg-green-50 dark:bg-green-950 dark:border-green-800"
                 >
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <h3 className="text-xl font-bold">{community.name}</h3>
-                      <p className="text-gray-600 mt-2">
-                        {community.description || "No description"}
-                      </p>
-                      <div className="mt-2 flex gap-4 text-sm text-gray-500">
-                        <span className="capitalize">
-                          {community.visibility}
-                        </span>
-                        <span>
-                          {new Date(community.created_at).toLocaleDateString()}
-                        </span>
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <CardTitle className="flex items-center gap-2">
+                          <Users className="h-5 w-5" />
+                          {community.name}
+                        </CardTitle>
+                        <div className="flex items-center gap-2 mt-2">
+                          <Badge
+                            variant={
+                              community.visibility === "public"
+                                ? "default"
+                                : "secondary"
+                            }
+                          >
+                            {community.visibility === "public" ? (
+                              <>
+                                <Globe className="h-3 w-3 mr-1" /> Public
+                              </>
+                            ) : (
+                              <>
+                                <Lock className="h-3 w-3 mr-1" /> Private
+                              </>
+                            )}
+                          </Badge>
+                          <span className="text-xs text-muted-foreground">
+                            {new Date(
+                              community.created_at
+                            ).toLocaleDateString()}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => startEdit(community)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => handleDelete(community.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
                     </div>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => startEdit(community)}
-                        className="px-3 py-1 bg-blue-500 text-white rounded text-sm hover:bg-blue-600"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDelete(community.id)}
-                        className="px-3 py-1 bg-red-500 text-white rounded text-sm hover:bg-red-600"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </div>
-                </div>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-muted-foreground">
+                      {community.description || "No description provided"}
+                    </p>
+                  </CardContent>
+                </Card>
               ))}
             </div>
           </div>
@@ -337,55 +460,98 @@ export default function CommunitiesPage() {
         <div>
           <h2 className="text-2xl font-bold mb-4">All Communities</h2>
           {communities.length === 0 ? (
-            <p className="text-gray-500">No communities found.</p>
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-12">
+                <Users className="h-12 w-12 text-muted-foreground mb-4" />
+                <p className="text-muted-foreground text-center">
+                  No communities found.
+                </p>
+                <Button
+                  onClick={() => setShowCreateForm(true)}
+                  variant="outline"
+                  className="mt-4"
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Create the first community
+                </Button>
+              </CardContent>
+            </Card>
           ) : (
             <>
-              <div className="grid gap-4 mb-4">
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mb-6">
                 {communities.map((community) => (
-                  <div
+                  <Card
                     key={community.id}
-                    className="p-4 bg-white border rounded shadow"
+                    className="hover:shadow-lg transition-shadow"
                   >
-                    <h3 className="text-xl font-bold">{community.name}</h3>
-                    <p className="text-gray-600 mt-2">
-                      {community.description || "No description"}
-                    </p>
-                    <div className="mt-2 flex gap-4 text-sm text-gray-500">
-                      <span className="capitalize">{community.visibility}</span>
-                      <span>
-                        {new Date(community.created_at).toLocaleDateString()}
-                      </span>
-                    </div>
-                  </div>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Users className="h-5 w-5" />
+                        {community.name}
+                      </CardTitle>
+                      <div className="flex items-center gap-2">
+                        <Badge
+                          variant={
+                            community.visibility === "public"
+                              ? "default"
+                              : "secondary"
+                          }
+                        >
+                          {community.visibility === "public" ? (
+                            <>
+                              <Globe className="h-3 w-3 mr-1" /> Public
+                            </>
+                          ) : (
+                            <>
+                              <Lock className="h-3 w-3 mr-1" /> Private
+                            </>
+                          )}
+                        </Badge>
+                        <span className="text-xs text-muted-foreground">
+                          {new Date(community.created_at).toLocaleDateString()}
+                        </span>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm text-muted-foreground line-clamp-3">
+                        {community.description || "No description provided"}
+                      </p>
+                    </CardContent>
+                    <CardFooter>
+                      <Button variant="outline" className="w-full">
+                        View Community
+                      </Button>
+                    </CardFooter>
+                  </Card>
                 ))}
               </div>
 
               {/* Pagination */}
-              <div className="flex justify-center gap-2">
-                <button
+              <div className="flex items-center justify-center gap-2">
+                <Button
                   onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                   disabled={currentPage === 1}
-                  className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400 disabled:bg-gray-200 disabled:cursor-not-allowed"
+                  variant="outline"
                 >
                   Previous
-                </button>
-                <span className="px-4 py-2">
+                </Button>
+                <span className="text-sm text-muted-foreground px-4">
                   Page {currentPage} of {totalPages}
                 </span>
-                <button
+                <Button
                   onClick={() =>
                     setCurrentPage((p) => Math.min(totalPages, p + 1))
                   }
                   disabled={currentPage === totalPages}
-                  className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400 disabled:bg-gray-200 disabled:cursor-not-allowed"
+                  variant="outline"
                 >
                   Next
-                </button>
+                </Button>
               </div>
             </>
           )}
         </div>
       </div>
-    </div>
+    </AppLayout>
   );
 }
