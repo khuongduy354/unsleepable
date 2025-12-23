@@ -3,6 +3,7 @@
 import { Post } from "@/lib/types/post.type";
 import { useState, useEffect } from "react";
 import CommentList from "./CommentList";
+import { commentApi } from "@/lib/api";
 
 interface PostListProps {
   posts: Post[];
@@ -13,10 +14,11 @@ export default function PostList({ posts }: PostListProps) {
   const [commentsMap, setCommentsMap] = useState<Record<string, any[]>>({});
 
   const loadComments = async (postId: string) => {
-    const res = await fetch(`/api/comment?postId=${postId}`);
-    if (res.ok) {
-      const comments = await res.json();
-      setCommentsMap(prev => ({ ...prev, [postId]: comments }));
+    try {
+      const comments = await commentApi.getByPostId(postId);
+      setCommentsMap((prev) => ({ ...prev, [postId]: comments }));
+    } catch (error) {
+      console.error("Error loading comments:", error);
     }
   };
 

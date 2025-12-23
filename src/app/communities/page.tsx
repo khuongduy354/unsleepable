@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { communityApi } from "@/lib/api";
 
 interface Community {
   id: string;
@@ -42,10 +43,7 @@ export default function CommunitiesPage() {
   // Fetch all communities
   const fetchCommunities = async (page: number = 1) => {
     try {
-      const response = await fetch(`/api/community?page=${page}&limit=5`);
-      if (!response.ok) throw new Error("Failed to fetch communities");
-
-      const data: PaginatedResponse = await response.json();
+      const data = await communityApi.getAll(page, 5);
       setCommunities(data.communities);
       setCurrentPage(data.page);
       setTotalPages(data.totalPages);
@@ -61,14 +59,7 @@ export default function CommunitiesPage() {
     if (!userId) return;
 
     try {
-      const response = await fetch("/api/community/owned", {
-        headers: {
-          "x-user-id": userId,
-        },
-      });
-      if (!response.ok) throw new Error("Failed to fetch owned communities");
-
-      const data: PaginatedResponse = await response.json();
+      const data = await communityApi.getOwned(userId);
       setOwnedCommunities(data.communities);
     } catch (err) {
       setError(
@@ -99,19 +90,7 @@ export default function CommunitiesPage() {
     setError("");
 
     try {
-      const response = await fetch("/api/community", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-user-id": userId,
-        },
-        body: JSON.stringify(formData),
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Failed to create community");
-      }
+      await communityApi.create(userId, formData);
 
       // Reset form and refresh data
       setFormData({ name: "", description: "", visibility: "public" });
@@ -136,19 +115,7 @@ export default function CommunitiesPage() {
     setError("");
 
     try {
-      const response = await fetch(`/api/community/${editingCommunity.id}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          "x-user-id": userId,
-        },
-        body: JSON.stringify(formData),
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Failed to update community");
-      }
+      await communityApi.update(editingCommunity.id, userId, formData);
 
       // Reset form and refresh data
       setFormData({ name: "", description: "", visibility: "public" });
@@ -177,17 +144,7 @@ export default function CommunitiesPage() {
     setError("");
 
     try {
-      const response = await fetch(`/api/community/${communityId}`, {
-        method: "DELETE",
-        headers: {
-          "x-user-id": userId,
-        },
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Failed to delete community");
-      }
+      await communityApi.delete(communityId, userId);
 
       await fetchCommunities(currentPage);
       await fetchOwnedCommunities();

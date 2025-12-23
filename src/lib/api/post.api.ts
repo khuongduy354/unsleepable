@@ -1,0 +1,95 @@
+// API callers for post endpoints
+
+export const postApi = {
+  // Get post by ID
+  async getById(id: string) {
+    const res = await fetch(`/api/post/${id}`);
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.error || "Failed to fetch post");
+    }
+
+    return data.post;
+  },
+
+  // Get posts by author ID
+  async getByAuthorId(authorId: string) {
+    const res = await fetch(`/api/post?authorId=${authorId}`);
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.error || "Failed to fetch posts");
+    }
+
+    return data.post;
+  },
+
+  // Get all posts
+  async getAll() {
+    const res = await fetch("/api/post");
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.error || "Failed to fetch posts");
+    }
+
+    return data.posts;
+  },
+
+  // Create new post
+  async create(payload: { title: string; content: string; user_id?: string }) {
+    const res = await fetch("/api/post", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.error || "Failed to create post");
+    }
+
+    return data.post;
+  },
+
+  // Update post
+  async update(
+    id: string,
+    payload: {
+      title?: string;
+      content?: string;
+      shortUrl?: string;
+    }
+  ) {
+    const res = await fetch(`/api/post/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.error || "Failed to update post");
+    }
+
+    return data.post;
+  },
+
+  // Delete post
+  async delete(id: string) {
+    const res = await fetch(`/api/post/${id}`, {
+      method: "DELETE",
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.error || "Failed to delete post");
+    }
+
+    return data;
+  },
+};

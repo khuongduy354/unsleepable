@@ -2,13 +2,17 @@
 
 import { Comment } from "@/lib/types/post.type";
 import { useState, useEffect } from "react";
+import { commentApi } from "@/lib/api";
 
 interface CommentListProps {
   postId: string;
   initialComments: Comment[];
 }
 
-export default function CommentList({ postId, initialComments }: CommentListProps) {
+export default function CommentList({
+  postId,
+  initialComments,
+}: CommentListProps) {
   const [comments, setComments] = useState(initialComments);
   const [replies, setReplies] = useState<Record<string, Comment[]>>({});
   const [newComment, setNewComment] = useState("");
@@ -21,54 +25,49 @@ export default function CommentList({ postId, initialComments }: CommentListProp
 
   const loadReplies = async (commentId: string) => {
     if (replies[commentId]) return;
-    
-    const res = await fetch(`/api/comment/${commentId}/replies`);
-    if (res.ok) {
-      const data = await res.json();
+
+    try {
+      const data = await commentApi.getReplies(commentId);
       setReplies({ ...replies, [commentId]: data });
+    } catch (error) {
+      console.error("Error loading replies:", error);
     }
   };
 
   const handleAddComment = async () => {
     if (!newComment.trim()) return;
 
-    const res = await fetch("/api/comment", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+    try {
+      const comment = await commentApi.create({
         content: newComment,
         post_id: postId,
-        user_id: "d2f1d6c0-47b4-4e3d-9ce4-5cb9033e1234", // Replace with actual user
-      }),
-    });
+        user_id: "d2f1d6c0-47b4-4e3d-9ce4-5cb9033e1234",
+      });
 
-    if (res.ok) {
-      const comment = await res.json();
       setComments([comment, ...comments]);
       setNewComment("");
+    } catch (error) {
+      console.error("Error adding comment:", error);
     }
   };
 
   const handleAddReply = async (parentId: string) => {
     if (!replyContent.trim()) return;
 
-    const res = await fetch("/api/comment", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+    try {
+      const reply = await commentApi.create({
         content: replyContent,
         post_id: postId,
         parent_comment_id: parentId,
-        user_id: "d2f1d6c0-47b4-4e3d-9ce4-5cb9033e1234", // Replace with actual user
-      }),
-    });
+        user_id: "d2f1d6c0-47b4-4e3d-9ce4-5cb9033e1234",
+      });
 
-    if (res.ok) {
-      const reply = await res.json();
       const currentReplies = replies[parentId] || [];
       setReplies({ ...replies, [parentId]: [...currentReplies, reply] });
       setReplyContent("");
       setReplyTo(null);
+    } catch (error) {
+      console.error("Error adding reply:", error);
     }
   };
 
@@ -112,7 +111,9 @@ export default function CommentList({ postId, initialComments }: CommentListProp
                 onClick={() => toggleReplies(comment.id)}
                 className="text-gray-600"
               >
-                {replies[comment.id] ? `${replies[comment.id].length} replies` : "Show replies"}
+                {replies[comment.id]
+                  ? `${replies[comment.id].length} replies`
+                  : "Show replies"}
               </button>
             </div>
 

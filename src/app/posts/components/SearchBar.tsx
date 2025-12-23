@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { PostSearchResult } from "@/lib/types/search.type";
+import { searchApi } from "@/lib/api";
 
 interface SearchBarProps {
   onSearchResults: (results: PostSearchResult[]) => void;
@@ -23,7 +24,12 @@ export default function SearchBar({
 
   // Unified search function
   const performSearch = useCallback(
-    async (query: string, orTagsStr: string, andTagsStr: string, notTagsStr: string) => {
+    async (
+      query: string,
+      orTagsStr: string,
+      andTagsStr: string,
+      notTagsStr: string
+    ) => {
       if (!query.trim()) {
         onSearchClear();
         return;
@@ -31,28 +37,14 @@ export default function SearchBar({
 
       setIsSearching(true);
       try {
-        const params = new URLSearchParams({ q: query });
-        
-        if (orTagsStr.trim()) {
-          params.append("orTags", orTagsStr);
-        }
-        if (andTagsStr.trim()) {
-          params.append("andTags", andTagsStr);
-        }
-        if (notTagsStr.trim()) {
-          params.append("notTags", notTagsStr);
-        }
-        if (communityId) {
-          params.append("communityId", communityId);
-        }
-
-        const response = await fetch(`/api/search?${params.toString()}`);
-        if (response.ok) {
-          const results = await response.json();
-          onSearchResults(results);
-        } else {
-          console.error("Search failed:", await response.text());
-        }
+        const results = await searchApi.searchPosts({
+          query,
+          orTags: orTagsStr,
+          andTags: andTagsStr,
+          notTags: notTagsStr,
+          communityId,
+        });
+        onSearchResults(results);
       } catch (error) {
         console.error("Search error:", error);
       } finally {
@@ -105,7 +97,7 @@ export default function SearchBar({
         onClick={() => setShowTagFilters(!showTagFilters)}
         className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"
       >
-        {showTagFilters ? '▼' : '▶'} Filter by tags (optional)
+        {showTagFilters ? "▼" : "▶"} Filter by tags (optional)
       </button>
 
       {/* Tag filters section */}
@@ -123,7 +115,9 @@ export default function SearchBar({
               placeholder="e.g., react, vue, angular"
               className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
-            <p className="text-xs text-gray-500 mt-1">Posts with at least one of these tags</p>
+            <p className="text-xs text-gray-500 mt-1">
+              Posts with at least one of these tags
+            </p>
           </div>
 
           {/* AND tags */}
@@ -138,7 +132,9 @@ export default function SearchBar({
               placeholder="e.g., javascript, tutorial"
               className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
-            <p className="text-xs text-gray-500 mt-1">Posts must have every tag listed</p>
+            <p className="text-xs text-gray-500 mt-1">
+              Posts must have every tag listed
+            </p>
           </div>
 
           {/* NOT tags */}
@@ -153,7 +149,9 @@ export default function SearchBar({
               placeholder="e.g., beginner, deprecated"
               className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
-            <p className="text-xs text-gray-500 mt-1">Posts must not have any of these tags</p>
+            <p className="text-xs text-gray-500 mt-1">
+              Posts must not have any of these tags
+            </p>
           </div>
 
           {/* Clear filters */}
@@ -172,9 +170,7 @@ export default function SearchBar({
         </div>
       )}
 
-      {isSearching && (
-        <div className="text-sm text-gray-500">Searching...</div>
-      )}
+      {isSearching && <div className="text-sm text-gray-500">Searching...</div>}
     </div>
   );
 }

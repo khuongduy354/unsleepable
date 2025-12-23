@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { UploadButton } from "./auth/ui/upload.tsx";
-// import ShortUrlSetter from "./auth/ui/shortUrl.tsx" 
+import { postApi } from "@/lib/api";
+// import ShortUrlSetter from "./auth/ui/shortUrl.tsx"
 
 export default function TestPostPage() {
   // State quản lý Input
@@ -32,12 +33,8 @@ export default function TestPostPage() {
     if (!searchId) return setResult("Hãy nhập ID!");
 
     try {
-      const res = await fetch(`/api/post/${searchId}`);
-      const data = await res.json();
-
-      if (!res.ok) throw new Error(data.error || "Lỗi gọi API");
-
-      setResult(JSON.stringify(data.post, null, 2));
+      const post = await postApi.getById(searchId);
+      setResult(JSON.stringify(post, null, 2));
     } catch (err: any) {
       setResult(`Error: ${err.message}`);
     }
@@ -48,12 +45,8 @@ export default function TestPostPage() {
     if (!userId) return setResult("Hãy nhập User ID!");
 
     try {
-      const res = await fetch(`/api/post?authorId=${userId}`);
-      const data = await res.json();
-
-      if (!res.ok) throw new Error(data.error || "Lỗi gọi API");
-
-      setResult(JSON.stringify(data.post, null, 2));
+      const posts = await postApi.getByAuthorId(userId);
+      setResult(JSON.stringify(posts, null, 2));
     } catch (err: any) {
       setResult(`Error: ${err.message}`);
     }
@@ -62,12 +55,8 @@ export default function TestPostPage() {
   // 📚 3. Lấy toàn bộ Post (GET /api/post)
   const handleFindAll = async () => {
     try {
-      const res = await fetch("/api/post");
-      const data = await res.json();
-
-      if (!res.ok) throw new Error(data.error || "Lỗi gọi API");
-
-      setResult(JSON.stringify(data.posts, null, 2));
+      const posts = await postApi.getAll();
+      setResult(JSON.stringify(posts, null, 2));
     } catch (err: any) {
       setResult(`Error: ${err.message}`);
     }
@@ -79,27 +68,15 @@ export default function TestPostPage() {
     if (!title || !content) return setMessage("Hãy nhập đủ title và content!");
 
     try {
-      // Vì chưa có Auth, ta tạm thời gửi kèm user_id giả nếu Service yêu cầu
-      // Hoặc nếu Repository đã hardcode fakeUserId thì không cần dòng user_id dưới đây
-      const payload = { 
-        title, 
+      const post = await postApi.create({
+        title,
         content,
-        user_id: "test-user-id-from-client" // Tùy chọn, tùy vào Service validation
-      };
-
-      const res = await fetch("/api/post", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        user_id: "test-user-id-from-client",
       });
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Insert thất bại");
-
-      setMessage(`Insert thành công! ID = ${data.post.id}`);
+      setMessage(`Insert thành công! ID = ${post.id}`);
       setTitle("");
       setContent("");
-      // Refresh lại danh sách nếu cần
     } catch (err: any) {
       setMessage(`Error: ${err.message}`);
     }
@@ -110,22 +87,13 @@ export default function TestPostPage() {
     if (!updateId) return setMessage("Hãy nhập ID để update!");
 
     try {
-      const payload = {
+      const post = await postApi.update(updateId, {
         title: updateTitle || undefined,
         content: updateContent || undefined,
         shortUrl: updateShortUrl || undefined,
-      };
-
-      const res = await fetch(`/api/post/${updateId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
       });
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Update thất bại");
-
-      setMessage(`Update thành công! ID = ${data.post.id}`);
+      setMessage(`Update thành công! ID = ${post.id}`);
       setUpdateId("");
       setUpdateTitle("");
       setUpdateContent("");
@@ -140,13 +108,7 @@ export default function TestPostPage() {
     if (!deleteId) return setMessage("Hãy nhập ID để xoá!");
 
     try {
-      const res = await fetch(`/api/post/${deleteId}`, {
-        method: "DELETE",
-      });
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Xoá thất bại");
-
+      await postApi.delete(deleteId);
       setMessage(`Xoá thành công post ID: ${deleteId}`);
       setDeleteId("");
     } catch (err: any) {
@@ -154,12 +116,10 @@ export default function TestPostPage() {
     }
   };
 
-
   // --- PHẦN GIAO DIỆN (GIỮ NGUYÊN KHÔNG ĐỔI) ---
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col items-center p-6">
       <div className="w-full max-w-2xl bg-white rounded-lg shadow p-6 flex flex-col gap-10">
-        
         {/* SEARCH ID */}
         <section>
           <h2 className="text-xl font-bold mb-3">🔍 Tìm Post theo ID</h2>
@@ -179,7 +139,7 @@ export default function TestPostPage() {
             </button>
           </div>
         </section>
-<UploadButton />
+        <UploadButton />
         {/* SEARCH USER ID */}
         <section>
           <h2 className="text-xl font-bold mb-3">🔍 Tìm Post theo User ID</h2>
@@ -262,13 +222,13 @@ export default function TestPostPage() {
             className="p-2 border rounded-md w-full mb-2"
             rows={3}
           />
-<input
-    type="text"
-    value={updateShortUrl}
-    onChange={(e) => setUpdateShortUrl(e.target.value)}
-    placeholder="Short URL mới... (ví dụ: my-post-is-dumb)"
-    className="p-2 border rounded-md w-full mb-2"
-  />
+          <input
+            type="text"
+            value={updateShortUrl}
+            onChange={(e) => setUpdateShortUrl(e.target.value)}
+            placeholder="Short URL mới... (ví dụ: my-post-is-dumb)"
+            className="p-2 border rounded-md w-full mb-2"
+          />
           <button
             onClick={handleUpdate}
             className="bg-yellow-600 text-white py-2 rounded-md hover:bg-yellow-700"
@@ -299,7 +259,9 @@ export default function TestPostPage() {
 
         {/* MESSAGES */}
         {message && (
-          <p className="mt-4 text-center text-sm text-gray-700 font-semibold">{message}</p>
+          <p className="mt-4 text-center text-sm text-gray-700 font-semibold">
+            {message}
+          </p>
         )}
         {result && (
           <pre className="mt-4 bg-gray-200 p-3 rounded text-sm overflow-auto max-h-96">
@@ -310,5 +272,3 @@ export default function TestPostPage() {
     </div>
   );
 }
-
-
