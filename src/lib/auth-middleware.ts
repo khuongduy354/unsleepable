@@ -1,23 +1,31 @@
+// middleware.ts (Next.js)
+import { createServerClient } from "@supabase/ssr";
 import { NextRequest } from "next/server";
 
-/**
- * Mock authentication middleware for extracting user ID from request headers
- * In production, this should be replaced with actual authentication logic
- *
- * For now, the frontend should include a 'x-user-id' header with the user's ID
- */
+// Returns the authenticated user's id string, or throws an Error("Unauthorized")
+// if no user is found. Callers should `await` this and let their try/catch
+// map the error to a 401 response.
+export async function requireAuth(request: NextRequest): Promise<string> {
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY!,
+    {
+      cookies: {
+        // minimal cookie helpers backed by the incoming request
+        getAll: () => request.cookies.getAll(),
+        // setAll is a noop for API handlers; we don't mutate cookies here
+        setAll: () => {},
+      },
+    }
+  );
 
-export function extractUserId(request: NextRequest): string | null {
-  const userId = request.headers.get("x-user-id");
-  return userId;
-}
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-export function requireAuth(request: NextRequest): string {
-  const userId = extractUserId(request);
-
-  if (!userId) {
-    throw new Error("Unauthorized: User ID not provided in headers");
+  if (!user) {
+    throw new Error("Unauthorized");
   }
 
-  return userId;
+  return user.id;
 }
