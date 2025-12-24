@@ -1,6 +1,6 @@
-import { PostService } from "./post.service";
-import { MockPostRepository } from "../repositories/mock/post.repository.mock";
-import { CreatePostDTO, Post } from "../types/post.type";
+import { PostService } from "@/lib/services/post.service";
+import { MockPostRepository } from "@/lib/repositories/mock/post.repository.mock";
+import { CreatePostDTO, Post } from "@/lib/types/post.type";
 
 /**
  * Unit tests for PostService
