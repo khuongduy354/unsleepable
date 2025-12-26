@@ -5,7 +5,6 @@ import { useRouter, usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
   Home,
-  Search,
   PlusSquare,
   Users,
   LogOut,
@@ -13,6 +12,7 @@ import {
   TrendingUp,
   Bell,
   Mail,
+  HardDrive,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -24,6 +24,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { createClient } from "@/utils/supabase/client";
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -35,19 +36,45 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [username, setUsername] = useState("User");
+  const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    const loggedIn = !!localStorage.getItem("isLoggedIn");
-    const storedUsername = localStorage.getItem("username") || "User";
-    setIsLoggedIn(loggedIn);
-    setUsername(storedUsername);
+    checkAuth();
   }, []);
 
-  const handleLogout = () => {
+  const checkAuth = async () => {
+    const supabase = createClient();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (session?.user) {
+      setIsLoggedIn(true);
+      setUsername(session.user.email?.split("@")[0] || "User");
+      setUserId(session.user.id);
+      // Store in localStorage for backwards compatibility
+      localStorage.setItem("isLoggedIn", "true");
+      localStorage.setItem(
+        "username",
+        session.user.email?.split("@")[0] || "User"
+      );
+      localStorage.setItem("userId", session.user.id);
+    } else {
+      setIsLoggedIn(false);
+      setUsername("User");
+      setUserId(null);
+    }
+  };
+
+  const handleLogout = async () => {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+
     localStorage.removeItem("isLoggedIn");
     localStorage.removeItem("username");
     localStorage.removeItem("userId");
     setShowLogoutDialog(false);
+    setIsLoggedIn(false);
     router.push("/auth/login");
   };
 
@@ -85,14 +112,6 @@ export default function AppLayout({ children }: AppLayoutProps) {
             <Users className="w-4 h-4" />
             Communities
           </Button>
-          <Button
-            variant={isActive("/search") ? "secondary" : "ghost"}
-            className="w-full justify-start gap-3"
-            onClick={() => router.push("/search")}
-          >
-            <Search className="w-4 h-4" />
-            Search
-          </Button>
           {isLoggedIn && (
             <>
               <Button
@@ -118,6 +137,14 @@ export default function AppLayout({ children }: AppLayoutProps) {
               >
                 <Bell className="w-4 h-4" />
                 Notifications
+              </Button>
+              <Button
+                variant={isActive("/storage") ? "secondary" : "ghost"}
+                className="w-full justify-start gap-3"
+                onClick={() => router.push("/storage")}
+              >
+                <HardDrive className="w-4 h-4" />
+                Storage
               </Button>
             </>
           )}

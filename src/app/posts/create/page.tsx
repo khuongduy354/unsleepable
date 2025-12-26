@@ -21,7 +21,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, ArrowLeft, Send } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import AppLayout from "@/components/AppLayout";
@@ -44,13 +43,73 @@ export default function CreatePostPage() {
   const [communities, setCommunities] = useState<Community[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadingCommunities, setLoadingCommunities] = useState(true);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
-  // Mock user ID for testing
-  const [userId] = useState("d2f1d6c0-47b4-4e3d-9ce4-5cb9033e1234");
+  // Get user ID from localStorage or use mock
+  const [userId, setUserId] = useState("d2f1d6c0-47b4-4e3d-9ce4-5cb9033e1234");
 
   useEffect(() => {
+    const storedUserId = localStorage.getItem("userId");
+    if (storedUserId) {
+      setUserId(storedUserId);
+    }
     fetchCommunities();
   }, []);
+
+  const uploadImage = async (file: File) => {
+    setUploadingImage(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const response = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to upload image");
+      }
+
+      const data = await response.json();
+      return data.url;
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to upload image",
+        variant: "destructive",
+      });
+      throw error;
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  const handlePaste = async (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type.indexOf("image") !== -1) {
+        e.preventDefault();
+        const file = items[i].getAsFile();
+        if (file) {
+          try {
+            const imageUrl = await uploadImage(file);
+            const imageMarkdown = `\n![Image](${imageUrl})\n`;
+            setContent((prev) => prev + imageMarkdown);
+
+            toast({
+              title: "Success",
+              description: "Image uploaded successfully",
+            });
+          } catch (error) {
+            // Error already handled in uploadImage
+          }
+        }
+      }
+    }
+  };
 
   const fetchCommunities = async () => {
     try {
@@ -94,7 +153,6 @@ export default function CreatePostPage() {
         description: "Post created successfully",
       });
 
-      // Navigate to the new post
       router.push(`/posts/${newPost.id}`);
     } catch (error) {
       toast({
@@ -124,16 +182,6 @@ export default function CreatePostPage() {
             Share your thoughts with the community
           </p>
         </div>
-
-        {/* Mock User ID Alert */}
-        <Alert className="mb-6 border-yellow-400 bg-yellow-50 dark:bg-yellow-950">
-          <AlertDescription>
-            <p className="text-sm font-semibold mb-1">Testing Mode</p>
-            <p className="text-sm text-muted-foreground">
-              Using mock user ID: {userId.substring(0, 20)}...
-            </p>
-          </AlertDescription>
-        </Alert>
 
         {/* Create Form */}
         <Card>
@@ -196,13 +244,21 @@ export default function CreatePostPage() {
                 <Label htmlFor="content">Content *</Label>
                 <Textarea
                   id="content"
-                  placeholder="What's on your mind?"
+                  placeholder="What's on your mind? (Paste images with Ctrl+V)"
                   value={content}
                   onChange={(e) => setContent(e.target.value)}
+                  onPaste={handlePaste}
                   required
                   rows={10}
                   className="resize-y"
+                  disabled={uploadingImage}
                 />
+                {uploadingImage && (
+                  <p className="text-xs text-muted-foreground flex items-center gap-2">
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                    Uploading image...
+                  </p>
+                )}
                 <p className="text-xs text-muted-foreground text-right">
                   {content.length} characters
                 </p>
@@ -253,9 +309,30 @@ export default function CreatePostPage() {
                 <h3 className="text-2xl font-bold mb-2">{title}</h3>
               )}
               {content.trim() && (
-                <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                  {content}
-                </p>
+                <div className="prose prose-sm max-w-none">
+                  {content.split("\n").map((line, idx) => {
+                    // Check if line is a markdown image
+                    const imageMatch = line.match(/!\[.*?\]\((.*?)\)/);
+                    if (imageMatch) {
+                      return (
+                        <img
+                          key={idx}
+                          src={imageMatch[1]}
+                          alt="Uploaded image"
+                          className="max-w-full h-auto rounded-lg my-2"
+                        />
+                      );
+                    }
+                    // Regular text
+                    return line ? (
+                      <p key={idx} className="text-muted-foreground mb-2">
+                        {line}
+                      </p>
+                    ) : (
+                      <br key={idx} />
+                    );
+                  })}
+                </div>
               )}
             </CardContent>
           </Card>

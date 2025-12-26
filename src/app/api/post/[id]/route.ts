@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import service from "@/lib/setup/index";
+import { service } from "@/lib/setup/index";
 import { UpdatePostDTO } from "@/lib/types/post.type";
 
 // GET /api/posts/[id]
@@ -13,10 +13,7 @@ export async function GET(
     const post = await postService.getPostById(id);
 
     if (!post) {
-      return NextResponse.json(
-        { error: "Post not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Post not found" }, { status: 404 });
     }
 
     return NextResponse.json({ post });
@@ -65,14 +62,11 @@ export async function PATCH(
     console.error("Error updating post:", error);
 
     const statusCode =
-      error instanceof Error && error.message.includes("not found")
-        ? 404
-        : 400;
+      error instanceof Error && error.message.includes("not found") ? 404 : 400;
 
     return NextResponse.json(
       {
-        error:
-          error instanceof Error ? error.message : "Failed to update post",
+        error: error instanceof Error ? error.message : "Failed to update post",
       },
       { status: statusCode }
     );
@@ -96,14 +90,11 @@ export async function DELETE(
   } catch (error) {
     console.error("Error deleting post:", error);
     const statusCode =
-      error instanceof Error && error.message.includes("not found")
-        ? 404
-        : 400;
+      error instanceof Error && error.message.includes("not found") ? 404 : 400;
 
     return NextResponse.json(
       {
-        error:
-          error instanceof Error ? error.message : "Failed to delete post",
+        error: error instanceof Error ? error.message : "Failed to delete post",
       },
       { status: statusCode }
     );

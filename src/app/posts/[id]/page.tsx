@@ -22,9 +22,9 @@ import {
   ThumbsUp,
   ThumbsDown,
   MessageSquare,
-  Share2,
   Edit,
   Trash2,
+  Sparkles,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -40,6 +40,7 @@ interface Post {
   dislikes_count: number;
   comments_count: number;
   engagement_score: number | null;
+  summary?: string | null;
 }
 
 interface Comment {
@@ -63,6 +64,8 @@ export default function PostDetailPage() {
   const [loading, setLoading] = useState(true);
   const [commentContent, setCommentContent] = useState("");
   const [submittingComment, setSubmittingComment] = useState(false);
+  const [summarizing, setSummarizing] = useState(false);
+  const [showSummary, setShowSummary] = useState(false);
 
   // Mock user ID for testing
   const [userId] = useState("d2f1d6c0-47b4-4e3d-9ce4-5cb9033e1234");
@@ -164,8 +167,6 @@ export default function PostDetailPage() {
         variant: "destructive",
       });
     }
-  };
-
   const handleDelete = async () => {
     if (!confirm("Are you sure you want to delete this post?")) return;
 
@@ -182,6 +183,46 @@ export default function PostDetailPage() {
         description: "Failed to delete post",
         variant: "destructive",
       });
+    }
+  };
+
+  const handleSummarize = async () => {
+    if (!post) return;
+
+    setSummarizing(true);
+    try {
+      const response = await fetch("/api/aisummarize", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ content: post.content }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to summarize");
+      }
+
+      const { summary } = await response.json();
+
+      // Update post with summary
+      await postApi.update(postId, userId, { summary });
+
+      setPost({ ...post, summary });
+      setShowSummary(true);
+
+      toast({
+        title: "Success",
+        description: "Post summarized successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to summarize post",
+        variant: "destructive",
+      });
+    } finally {
+      setSummarizing(false);
     }
   };
 
@@ -256,7 +297,46 @@ export default function PostDetailPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <p className="text-base whitespace-pre-wrap mb-6">{post.content}</p>
+            {/* Summary Toggle - shown to everyone if summary exists */}
+            {post.summary && (
+              <div className="mb-4">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowSummary(!showSummary)}
+                >
+                  {showSummary ? "Show Full Content" : "Show Summary"}
+                </Button>
+              </div>
+            )}
+
+            {/* Display content or summary */}
+            <p className="text-base whitespace-pre-wrap mb-6">
+              {showSummary && post.summary ? post.summary : post.content}
+            </p>
+
+            {/* Summarize button - only for post owner and if not summarized */}
+            {post.user_id === userId && !post.summary && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleSummarize}
+                disabled={summarizing}
+                className="mb-4"
+              >
+                {summarizing ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Summarizing...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="mr-2 h-4 w-4" />
+                    AI Summarize
+                  </>
+                )}
+              </Button>
+            )}
 
             <Separator className="my-4" />
 
@@ -273,10 +353,6 @@ export default function PostDetailPage() {
               <Button variant="ghost" size="sm">
                 <MessageSquare className="mr-2 h-4 w-4" />
                 {post.comments_count} comments
-              </Button>
-              <Button variant="ghost" size="sm">
-                <Share2 className="mr-2 h-4 w-4" />
-                Share
               </Button>
             </div>
           </CardContent>

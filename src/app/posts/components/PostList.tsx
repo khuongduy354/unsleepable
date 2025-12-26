@@ -1,62 +1,165 @@
 "use client";
 
 import { Post } from "@/lib/types/post.type";
-import { useState, useEffect } from "react";
-import CommentList from "./CommentList";
-import { commentApi } from "@/lib/api";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { postApi } from "@/lib/api";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+} from "@/components/ui/card";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { MessageSquare, ThumbsUp, ThumbsDown, Trash2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 interface PostListProps {
   posts: Post[];
 }
 
 export default function PostList({ posts }: PostListProps) {
-  const [expandedPost, setExpandedPost] = useState<string | null>(null);
-  const [commentsMap, setCommentsMap] = useState<Record<string, any[]>>({});
+  const router = useRouter();
+  const { toast } = useToast();
+  const [userId] = useState("d2f1d6c0-47b4-4e3d-9ce4-5cb9033e1234");
 
-  const loadComments = async (postId: string) => {
+  const handleDeletePost = async (postId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+
+    if (!confirm("Are you sure you want to delete this post?")) return;
+
     try {
-      const comments = await commentApi.getByPostId(postId);
-      setCommentsMap((prev) => ({ ...prev, [postId]: comments }));
+      await postApi.delete(postId, userId);
+      window.location.reload(); // Simple reload to refresh the list
+      toast({
+        title: "Success",
+        description: "Post deleted successfully",
+      });
     } catch (error) {
-      console.error("Error loading comments:", error);
+      console.error("Error deleting post:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete post",
+        variant: "destructive",
+      });
     }
   };
 
-  const toggleComments = (postId: string) => {
-    if (expandedPost === postId) {
-      setExpandedPost(null);
-    } else {
-      setExpandedPost(postId);
-      loadComments(postId);
+  const handleLike = async (postId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      await postApi.react(postId, userId, "like");
+      window.location.reload();
+      toast({
+        title: "Success",
+        description: "Post liked",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to like post",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDislike = async (postId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      await postApi.react(postId, userId, "dislike");
+      window.location.reload();
+      toast({
+        title: "Success",
+        description: "Post disliked",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to dislike post",
+        variant: "destructive",
+      });
     }
   };
 
   return (
     <div className="space-y-4">
-      {posts.map((post) => (
-        <div key={post.id} className="border rounded-lg p-4 hover:bg-gray-50">
-          <h3 className="text-xl font-semibold">{post.title}</h3>
-          <p className="text-gray-600 mt-2">{post.content}</p>
-          <div className="flex gap-4 items-center mt-2 text-sm text-gray-400">
-            <span>{new Date(post.created_at).toLocaleDateString()}</span>
-            <button
-              onClick={() => toggleComments(post.id)}
-              className="text-blue-500 hover:underline"
-            >
-              {expandedPost === post.id ? "Hide" : "Show"} Comments
-            </button>
-          </div>
+      {posts.map((post) => {
+        const timeAgo = new Date(post.created_at).toLocaleString();
+        const isOwnPost = userId === post.user_id;
 
-          {expandedPost === post.id && (
-            <div className="mt-4 pl-4 border-l-2">
-              <CommentList
-                postId={post.id}
-                initialComments={commentsMap[post.id] || []}
-              />
-            </div>
-          )}
-        </div>
-      ))}
+        return (
+          <Card
+            key={post.id}
+            className="hover:shadow-lg transition-shadow cursor-pointer"
+            onClick={() => router.push(`/posts/${post.id}`)}
+          >
+            <CardHeader>
+              <div className="flex items-center gap-3">
+                <Avatar>
+                  <AvatarFallback>
+                    {post.user_id.substring(0, 2).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold">
+                      User {post.user_id.substring(0, 8)}
+                    </span>
+                  </div>
+                  <span className="text-xs text-muted-foreground">
+                    {timeAgo}
+                  </span>
+                </div>
+                {isOwnPost && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => handleDeletePost(post.id, e)}
+                  >
+                    <Trash2 className="w-4 h-4 text-destructive" />
+                  </Button>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent>
+              <h2 className="text-xl font-bold mb-2">{post.title}</h2>
+              <p className="text-muted-foreground line-clamp-3">
+                {post.content}
+              </p>
+            </CardContent>
+            <CardFooter className="flex gap-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={(e) => handleLike(post.id, e)}
+                className="gap-2"
+              >
+                <ThumbsUp className="w-4 h-4" />
+                <span>{post.likes_count || 0}</span>
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={(e) => handleDislike(post.id, e)}
+                className="gap-2"
+              >
+                <ThumbsDown className="w-4 h-4" />
+                <span>{post.dislikes_count || 0}</span>
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => router.push(`/posts/${post.id}`)}
+                className="gap-2"
+              >
+                <MessageSquare className="w-4 h-4" />
+                <span>{post.comments_count || 0}</span>
+              </Button>
+            </CardFooter>
+          </Card>
+        );
+      })}
     </div>
   );
 }

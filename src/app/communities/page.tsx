@@ -48,7 +48,7 @@ export default function CommunitiesPage() {
   const [ownedCommunities, setOwnedCommunities] = useState<Community[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [userId, setUserId] = useState("d2f1d6c0-47b4-4e3d-9ce4-5cb9033e1234");
+  const [userId, setUserId] = useState("");
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingCommunity, setEditingCommunity] = useState<Community | null>(
     null
@@ -64,6 +64,14 @@ export default function CommunitiesPage() {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  // Get userId from localStorage on mount
+  useEffect(() => {
+    const storedUserId = localStorage.getItem("userId");
+    if (storedUserId) {
+      setUserId(storedUserId);
+    }
+  }, []);
 
   // Fetch all communities
   const fetchCommunities = async (page: number = 1) => {
@@ -241,26 +249,17 @@ export default function CommunitiesPage() {
           </p>
         </div>
 
-        {/* User ID Input (Mock Auth) */}
-        <Alert className="mb-6 border-yellow-400 bg-yellow-50 dark:bg-yellow-950">
-          <AlertDescription>
-            <Label htmlFor="userId" className="font-semibold mb-2 block">
-              Mock User ID (for testing)
-            </Label>
-            <Input
-              id="userId"
-              type="text"
-              value={userId}
-              onChange={(e) => setUserId(e.target.value)}
-              placeholder="Enter a user ID"
-              className="mb-2"
-            />
-            <p className="text-sm text-muted-foreground">
-              This simulates authentication. Use a real user ID from your
-              database.
-            </p>
-          </AlertDescription>
-        </Alert>
+        {/* User ID Display (if not logged in properly) */}
+        {!userId && (
+          <Alert className="mb-6 border-yellow-400 bg-yellow-50 dark:bg-yellow-950">
+            <AlertDescription>
+              <p className="text-sm font-semibold mb-1">Not Authenticated</p>
+              <p className="text-sm text-muted-foreground">
+                Please log in to create or manage communities.
+              </p>
+            </AlertDescription>
+          </Alert>
+        )}
 
         {/* Error Display */}
         {error && (
