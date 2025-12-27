@@ -7,6 +7,10 @@ export interface CreateReportData {
     reportedEntityType: ReportEntityType;
 }
 
+export interface ReportFilters {
+    reporterId?: string;
+}
+
 export interface Report {
     id: string;
     reporter_user_id: string;
@@ -21,8 +25,9 @@ export interface Report {
 export interface IReportRepository {
     save(data: CreateReportData, reporterId: string): Promise<Report>;
     entityExists(id: string, type: ReportEntityType): Promise<boolean>;
-    // Hàm Admin sẽ thêm sau:
-    // findPendingReports(): Promise<Report[]>;
-    // updateReportStatus(reportId: string, status: ReportStatus): Promise<Report>;
+    findPendingReports(): Promise<Report[]>;
+    updateReportStatus(reportId: string, status: ReportStatus): Promise<Report>;
 }
+
+
 

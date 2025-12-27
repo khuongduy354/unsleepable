@@ -27,7 +27,7 @@ export async function POST(req: Request) {
     const summarize = await getSummarizer();
 
     const result = await summarize(content, {
-      max_length: 100,
+      max_length: 200,
       min_length: 30,
     });
 

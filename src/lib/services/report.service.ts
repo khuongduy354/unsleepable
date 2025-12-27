@@ -4,10 +4,8 @@ import { CreateReportData, Report, ReportEntityType, IReportRepository } from "@
 
 export interface IReportService {
     createReport(data: CreateReportData, reporterId: string): Promise<Report>;
-
-    // Các hàm xử lý Admin sẽ thêm sau:
-    // getPendingReports(): Promise<Report[]>;
-    // handleReportDecision(reportId: string, decision: 'APPROVE' | 'REJECT', adminId: string): Promise<void>;
+    getPendingReports(): Promise<Report[]>;
+    handleReportDecision(reportId: string, decision: 'APPROVE' | 'REJECT', adminId: string): Promise<void>;
 }
 
 
@@ -37,5 +35,21 @@ export class ReportService implements IReportService {
         const newReport = await this.reportRepository.save(data, reporterId);
 
         return newReport;
+    }
+
+    async getPendingReports(): Promise<Report[]> {
+        // Fetch reports with PENDING status from repository
+        const pendingReports = await this.reportRepository.findPendingReports();
+        return pendingReports;
+    }
+
+    async handleReportDecision(reportId: string, decision: 'APPROVE' | 'REJECT', adminId: string): Promise<void> {
+        // Implementation for handling report decisions will go here
+        const validDecisions = ['APPROVE', 'REJECT'];
+        if (!validDecisions.includes(decision)) {
+            throw new Error("Invalid decision. Must be 'APPROVE' or 'REJECT'.");
+        }
+        const newStatus = decision === 'APPROVE' ? 'RESOLVED' : 'REJECTED';
+        await this.reportRepository.updateReportStatus(reportId, newStatus);
     }
 }

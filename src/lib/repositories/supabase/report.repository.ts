@@ -63,4 +63,32 @@ export class SupabaseReportRepository implements IReportRepository {
 
         return (count || 0) > 0;
     }
-}
+
+    async findPendingReports(): Promise<Report[]> {
+        const { data: reports, error } = await this.supabase
+            .from(REPORT_TABLE)
+            .select("*")
+            .eq("status", "PENDING")
+            .order("created_at", { ascending: false });
+
+        if (error) {
+            throw new Error(`Failed to fetch pending reports: ${error.message}`);
+        }
+
+        return reports || [];
+    }
+
+    async updateReportStatus(reportId: string, status: ReportStatus): Promise<Report> {
+        const { data: report, error } = await this.supabase
+            .from(REPORT_TABLE)
+            .update({ status })
+            .eq("id", reportId)
+            .select()
+            .single();
+
+        if (error) {
+            throw new Error(`Failed to update report status: ${error.message}`);
+        }
+
+        return report as Report;
+    }

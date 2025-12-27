@@ -14,6 +14,7 @@ export interface UpdatePostDTO {
   media_url?: string;
   media_type?: string;
   storage_path?: string;
+  status?: "approved" | "pending" | "rejected";
 }
 
 export interface PostFilters {
@@ -28,6 +29,7 @@ export interface Post {
   content: string;
   created_at: string;
   updated_at: string;
+  status: "approved" | "pending" | "rejected";
 }
 
 // Comment DTOs and interfaces
@@ -40,6 +42,7 @@ export interface CreateCommentDTO {
 
 export interface UpdateCommentDTO {
   content?: string;
+  status_reported?: "reviewed" | "dismissed";
 }
 
 export interface Comment {
