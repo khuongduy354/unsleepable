@@ -3,6 +3,7 @@ import {
     CreateReportData, 
     Report, 
     ReportEntityType, 
+    ReportStatus,
     IReportRepository 
 } from "../../types/report.type"; 
 
@@ -91,4 +92,84 @@ export class SupabaseReportRepository implements IReportRepository {
         }
 
         return report as Report;
+    }
+
+    /**
+     * Lấy chi tiết báo cáo bao gồm thông tin entity bị báo cáo
+     */
+    async getReportById(reportId: string): Promise<Report | null> {
+        const { data: report, error } = await this.supabase
+            .from(REPORT_TABLE)
+            .select("*")
+            .eq("id", reportId)
+            .single();
+
+        if (error) {
+            if (error.code === "PGRST116") {
+                return null;
+            }
+            throw new Error(`Failed to fetch report: ${error.message}`);
+        }
+
+        return report as Report;
+    }
+
+    /**
+     * Xóa post bị báo cáo
+     */
+    async deletePost(postId: string): Promise<void> {
+        try {
+            // First delete related PostTag records
+            const { error: tagError } = await this.supabase
+                .from("PostTag")
+                .delete()
+                .eq("post_id", postId);
+
+            if (tagError) {
+                console.warn(`Warning: Failed to delete PostTags for post ${postId}: ${tagError.message}`);
+                // Don't throw, continue with post deletion
+            }
+
+            // Then delete the post
+            const { error } = await this.supabase
+                .from(POST_TABLE)
+                .delete()
+                .eq("id", postId);
+
+            if (error) {
+                throw new Error(`Failed to delete post: ${error.message}`);
+            }
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    /**
+     * Xóa comment bị báo cáo
+     */
+    async deleteComment(commentId: string): Promise<void> {
+        try {
+            // Delete comment and any related replies (child comments)
+            const { error: repliesError } = await this.supabase
+                .from(COMMENT_TABLE)
+                .delete()
+                .eq("parent_comment_id", commentId);
+
+            if (repliesError) {
+                console.warn(`Warning: Failed to delete comment replies: ${repliesError.message}`);
+                // Don't throw, continue with main comment deletion
+            }
+
+            // Then delete the main comment
+            const { error } = await this.supabase
+                .from(COMMENT_TABLE)
+                .delete()
+                .eq("id", commentId);
+
+            if (error) {
+                throw new Error(`Failed to delete comment: ${error.message}`);
+            }
+        } catch (error) {
+            throw error;
+        }
     }

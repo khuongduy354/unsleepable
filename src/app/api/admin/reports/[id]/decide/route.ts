@@ -19,7 +19,7 @@ export async function POST(
 
     const reportService = await service.getReportService();
     const adminId = "admin-user-id"; // TODO: Get from auth context
-    await reportService.handleReportDecision(id, decision, adminId);
+    await reportService.handleReportDecision(id, decision as 'APPROVE' | 'REJECT', adminId);
 
     return NextResponse.json(
       { message: `Report ${decision.toLowerCase()}ed successfully` },
@@ -27,13 +27,12 @@ export async function POST(
     );
   } catch (error) {
     console.error("Error handling report decision:", error);
-    const statusCode =
-      error instanceof Error && error.message.includes("not found") ? 404 : 400;
+    const errorMessage = error instanceof Error ? error.message : "Failed to handle report";
+    const statusCode = errorMessage.includes("not found") ? 404 : 400;
 
     return NextResponse.json(
       {
-        error:
-          error instanceof Error ? error.message : "Failed to handle report",
+        error: errorMessage,
       },
       { status: statusCode }
     );
