@@ -1,12 +1,18 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
-import { Loader2 } from 'lucide-react';
+import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Loader2 } from "lucide-react";
 
 interface Post {
   id: string;
@@ -16,7 +22,7 @@ interface Post {
   community_id: string;
   created_at: string;
   updated_at: string;
-  status: 'approved' | 'pending' | 'rejected';
+  status: "approved" | "pending" | "rejected";
 }
 
 interface Report {
@@ -33,14 +39,16 @@ export default function AdminPage() {
   // Pending Posts State
   const [pendingPosts, setPendingPosts] = useState<Post[]>([]);
   const [postsLoading, setPostsLoading] = useState(false);
-  const [postsError, setPostsError] = useState('');
+  const [postsError, setPostsError] = useState("");
   const [processingPostId, setProcessingPostId] = useState<string | null>(null);
 
   // Pending Reports State
   const [pendingReports, setPendingReports] = useState<Report[]>([]);
   const [reportsLoading, setReportsLoading] = useState(false);
-  const [reportsError, setReportsError] = useState('');
-  const [processingReportId, setProcessingReportId] = useState<string | null>(null);
+  const [reportsError, setReportsError] = useState("");
+  const [processingReportId, setProcessingReportId] = useState<string | null>(
+    null
+  );
 
   // Fetch Pending Posts
   useEffect(() => {
@@ -49,16 +57,18 @@ export default function AdminPage() {
 
   const fetchPendingPosts = async () => {
     setPostsLoading(true);
-    setPostsError('');
+    setPostsError("");
     try {
-      const response = await fetch('/api/admin/posts/pending');
+      const response = await fetch("/api/admin/posts/pending");
       if (!response.ok) {
         throw new Error(`HTTP Error: ${response.status}`);
       }
       const data = await response.json();
       setPendingPosts(data.posts || []);
     } catch (error) {
-      setPostsError(error instanceof Error ? error.message : 'Failed to fetch pending posts');
+      setPostsError(
+        error instanceof Error ? error.message : "Failed to fetch pending posts"
+      );
     } finally {
       setPostsLoading(false);
     }
@@ -71,16 +81,20 @@ export default function AdminPage() {
 
   const fetchPendingReports = async () => {
     setReportsLoading(true);
-    setReportsError('');
+    setReportsError("");
     try {
-      const response = await fetch('/api/admin/reports/pending');
+      const response = await fetch("/api/admin/reports/pending");
       if (!response.ok) {
         throw new Error(`HTTP Error: ${response.status}`);
       }
       const data = await response.json();
       setPendingReports(data.reports || []);
     } catch (error) {
-      setReportsError(error instanceof Error ? error.message : 'Failed to fetch pending reports');
+      setReportsError(
+        error instanceof Error
+          ? error.message
+          : "Failed to fetch pending reports"
+      );
     } finally {
       setReportsLoading(false);
     }
@@ -89,17 +103,23 @@ export default function AdminPage() {
   // Handle Post Approval
   const handleApprovePost = async (postId: string) => {
     setProcessingPostId(postId);
+    // Optimistic UI update - remove immediately
+    const previousPosts = [...pendingPosts];
+    setPendingPosts(pendingPosts.filter((p) => p.id !== postId));
+
     try {
       const response = await fetch(`/api/admin/posts/${postId}/approve`, {
-        method: 'POST',
+        method: "POST",
       });
       if (!response.ok) {
         throw new Error(`HTTP Error: ${response.status}`);
       }
-      // Remove from pending list
-      setPendingPosts(pendingPosts.filter((p) => p.id !== postId));
     } catch (error) {
-      setPostsError(error instanceof Error ? error.message : 'Failed to approve post');
+      // Rollback on error
+      setPendingPosts(previousPosts);
+      setPostsError(
+        error instanceof Error ? error.message : "Failed to approve post"
+      );
     } finally {
       setProcessingPostId(null);
     }
@@ -108,38 +128,55 @@ export default function AdminPage() {
   // Handle Post Rejection
   const handleRejectPost = async (postId: string) => {
     setProcessingPostId(postId);
+    // Optimistic UI update - remove immediately
+    const previousPosts = [...pendingPosts];
+    setPendingPosts(pendingPosts.filter((p) => p.id !== postId));
+
     try {
       const response = await fetch(`/api/admin/posts/${postId}/reject`, {
-        method: 'POST',
+        method: "POST",
       });
       if (!response.ok) {
         throw new Error(`HTTP Error: ${response.status}`);
       }
-      // Remove from pending list
-      setPendingPosts(pendingPosts.filter((p) => p.id !== postId));
     } catch (error) {
-      setPostsError(error instanceof Error ? error.message : 'Failed to reject post');
+      // Rollback on error
+      setPendingPosts(previousPosts);
+      setPostsError(
+        error instanceof Error ? error.message : "Failed to reject post"
+      );
     } finally {
       setProcessingPostId(null);
     }
   };
 
   // Handle Report Decision
-  const handleReportDecision = async (reportId: string, decision: 'APPROVE' | 'REJECT') => {
+  const handleReportDecision = async (
+    reportId: string,
+    decision: "APPROVE" | "REJECT"
+  ) => {
     setProcessingReportId(reportId);
+    // Optimistic UI update - remove immediately
+    const previousReports = [...pendingReports];
+    setPendingReports(pendingReports.filter((r) => r.id !== reportId));
+
     try {
       const response = await fetch(`/api/admin/reports/${reportId}/decide`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ decision }),
       });
       if (!response.ok) {
         throw new Error(`HTTP Error: ${response.status}`);
       }
-      // Remove from pending list
-      setPendingReports(pendingReports.filter((r) => r.id !== reportId));
     } catch (error) {
-      setReportsError(error instanceof Error ? error.message : 'Failed to handle report decision');
+      // Rollback on error
+      setPendingReports(previousReports);
+      setReportsError(
+        error instanceof Error
+          ? error.message
+          : "Failed to handle report decision"
+      );
     } finally {
       setProcessingReportId(null);
     }
@@ -149,7 +186,9 @@ export default function AdminPage() {
     <div className="min-h-screen bg-background p-8">
       <div className="max-w-7xl mx-auto">
         <h1 className="text-3xl font-bold mb-2">Admin Panel</h1>
-        <p className="text-gray-600 mb-8">Quản lý pending posts và reported posts</p>
+        <p className="text-gray-600 mb-8">
+          Quản lý pending posts và reported posts
+        </p>
 
         <Tabs defaultValue="posts" className="w-full">
           <TabsList className="grid w-full grid-cols-2">
@@ -192,14 +231,19 @@ export default function AdminPage() {
                 )}
 
                 {pendingPosts.map((post) => (
-                  <Card key={post.id} className="border-l-4 border-l-yellow-500">
+                  <Card
+                    key={post.id}
+                    className="border-l-4 border-l-yellow-500"
+                  >
                     <CardContent className="pt-6">
                       <div className="space-y-3">
                         <div>
-                          <h3 className="font-semibold text-lg">{post.title}</h3>
+                          <h3 className="font-semibold text-lg">
+                            {post.title}
+                          </h3>
                           <p className="text-sm text-gray-600 mt-1">
                             {post.content.substring(0, 150)}
-                            {post.content.length > 150 ? '...' : ''}
+                            {post.content.length > 150 ? "..." : ""}
                           </p>
                         </div>
 
@@ -209,7 +253,10 @@ export default function AdminPage() {
                           <span>User: {post.user_id}</span>
                           <span>|</span>
                           <span>
-                            Created: {new Date(post.created_at).toLocaleDateString('vi-VN')}
+                            Created:{" "}
+                            {new Date(post.created_at).toLocaleDateString(
+                              "vi-VN"
+                            )}
                           </span>
                         </div>
 
@@ -291,32 +338,37 @@ export default function AdminPage() {
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
                             <h3 className="font-semibold">
-                              Báo cáo {report.reported_post_id ? 'Post' : 'Comment'}
+                              Báo cáo{" "}
+                              {report.reported_post_id ? "Post" : "Comment"}
                             </h3>
                             <p className="text-sm text-gray-700 mt-2">
                               <strong>Lý do:</strong> {report.reason}
                             </p>
                           </div>
-                          <Badge variant="secondary">
-                            {report.status}
-                          </Badge>
+                          <Badge variant="secondary">{report.status}</Badge>
                         </div>
 
                         <div className="grid grid-cols-2 gap-2 text-sm text-gray-500">
                           <span>Report ID: {report.id}</span>
                           <span>
-                            Reported Entity:{' '}
-                            {report.reported_post_id || report.reported_comment_id}
+                            Reported Entity:{" "}
+                            {report.reported_post_id ||
+                              report.reported_comment_id}
                           </span>
                           <span>Reporter: {report.reporter_user_id}</span>
                           <span>
-                            Created: {new Date(report.created_at).toLocaleDateString('vi-VN')}
+                            Created:{" "}
+                            {new Date(report.created_at).toLocaleDateString(
+                              "vi-VN"
+                            )}
                           </span>
                         </div>
 
                         <div className="flex gap-2 pt-2">
                           <Button
-                            onClick={() => handleReportDecision(report.id, 'APPROVE')}
+                            onClick={() =>
+                              handleReportDecision(report.id, "APPROVE")
+                            }
                             disabled={processingReportId === report.id}
                             variant="default"
                             className="bg-red-600 hover:bg-red-700"
@@ -324,17 +376,19 @@ export default function AdminPage() {
                             {processingReportId === report.id && (
                               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                             )}
-                            Phê duyệt báo cáo
+                            Delete Post
                           </Button>
                           <Button
-                            onClick={() => handleReportDecision(report.id, 'REJECT')}
+                            onClick={() =>
+                              handleReportDecision(report.id, "REJECT")
+                            }
                             disabled={processingReportId === report.id}
                             variant="outline"
                           >
                             {processingReportId === report.id && (
                               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                             )}
-                            Từ chối báo cáo
+                            Dismiss Report
                           </Button>
                         </div>
                       </div>

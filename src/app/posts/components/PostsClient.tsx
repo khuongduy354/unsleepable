@@ -29,6 +29,8 @@ export default function PostsClient({ initialPosts }: PostsClientProps) {
       comments_count: result.comments_count,
       engagement_score: result.engagement_score,
       community_name: result.community_name,
+      author_name: result.username,
+      status: "approved" as const,
     }));
     setDisplayPosts(posts);
     setIsSearching(true);

@@ -19,6 +19,7 @@ export interface PostSearchResult {
   title: string;
   content: string;
   user_id: string;
+  username?: string;
   community_id: string;
   created_at: string;
   updated_at: string;

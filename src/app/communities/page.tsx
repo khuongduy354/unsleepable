@@ -291,14 +291,24 @@ export default function CommunitiesPage() {
   // Approve member request
   const handleApproveMember = async (communityId: string, memberId: string) => {
     if (!userId) return;
+
+    // Optimistic update - remove immediately
+    const previousMembers = [...pendingMembers];
+    setPendingMembers(
+      pendingMembers.filter(
+        (m) => !(m.user_id === memberId && m.community_id === communityId)
+      )
+    );
+
     try {
       await communityApi.approveMember(communityId, memberId, userId);
       toast({
         title: "Success",
         description: "Member approved successfully",
       });
-      await fetchPendingMembers();
     } catch (err) {
+      // Rollback on error
+      setPendingMembers(previousMembers);
       toast({
         title: "Error",
         description:
@@ -311,14 +321,24 @@ export default function CommunitiesPage() {
   // Reject member request
   const handleRejectMember = async (communityId: string, memberId: string) => {
     if (!userId) return;
+
+    // Optimistic update - remove immediately
+    const previousMembers = [...pendingMembers];
+    setPendingMembers(
+      pendingMembers.filter(
+        (m) => !(m.user_id === memberId && m.community_id === communityId)
+      )
+    );
+
     try {
       await communityApi.rejectMember(communityId, memberId, userId);
       toast({
         title: "Success",
         description: "Member request rejected",
       });
-      await fetchPendingMembers();
     } catch (err) {
+      // Rollback on error
+      setPendingMembers(previousMembers);
       toast({
         title: "Error",
         description:
@@ -428,14 +448,20 @@ export default function CommunitiesPage() {
   // Approve post
   const handleApprovePost = async (postId: string) => {
     if (!userId) return;
+
+    // Optimistic update - remove immediately
+    const previousPosts = [...pendingPosts];
+    setPendingPosts(pendingPosts.filter((p) => p.id !== postId));
+
     try {
       await communityApi.approvePost(postId, userId);
       toast({
         title: "Success",
         description: "Post approved successfully",
       });
-      await fetchPendingPosts();
     } catch (err) {
+      // Rollback on error
+      setPendingPosts(previousPosts);
       toast({
         title: "Error",
         description:
@@ -448,14 +474,20 @@ export default function CommunitiesPage() {
   // Reject post
   const handleRejectPost = async (postId: string) => {
     if (!userId) return;
+
+    // Optimistic update - remove immediately
+    const previousPosts = [...pendingPosts];
+    setPendingPosts(pendingPosts.filter((p) => p.id !== postId));
+
     try {
       await communityApi.rejectPost(postId, userId);
       toast({
         title: "Success",
         description: "Post rejected successfully",
       });
-      await fetchPendingPosts();
     } catch (err) {
+      // Rollback on error
+      setPendingPosts(previousPosts);
       toast({
         title: "Error",
         description:
@@ -471,14 +503,20 @@ export default function CommunitiesPage() {
     decision: "APPROVE" | "REJECT"
   ) => {
     if (!userId) return;
+
+    // Optimistic update - remove immediately
+    const previousReports = [...pendingReports];
+    setPendingReports(pendingReports.filter((r) => r.id !== reportId));
+
     try {
       await communityApi.decideReport(reportId, userId, decision);
       toast({
         title: "Success",
         description: `Report ${decision.toLowerCase()}d successfully`,
       });
-      await fetchPendingReports();
     } catch (err) {
+      // Rollback on error
+      setPendingReports(previousReports);
       toast({
         title: "Error",
         description:
@@ -1180,7 +1218,7 @@ export default function CommunitiesPage() {
                                   }
                                 >
                                   <CheckCircle className="h-4 w-4 mr-2" />
-                                  Take Action
+                                  Delete Post
                                 </Button>
                                 <Button
                                   size="sm"
@@ -1190,7 +1228,7 @@ export default function CommunitiesPage() {
                                   }
                                 >
                                   <XCircle className="h-4 w-4 mr-2" />
-                                  Dismiss
+                                  Dismiss Report
                                 </Button>
                               </CardFooter>
                             </Card>
