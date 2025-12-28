@@ -90,6 +90,7 @@ export interface IPostService {
   getPosts(filters?: PostFilters): Promise<Post[]>;
   getPostsByAuthor(authorId: string): Promise<Post[]>;
   getPostsByCommunity(communityId: string): Promise<Post[]>;
+  getPendingPostsByAdmin(adminId: string): Promise<Post[]>;
   updatePost(id: string, data: UpdatePostDTO): Promise<Post>;
   deletePost(id: string): Promise<void>;
 

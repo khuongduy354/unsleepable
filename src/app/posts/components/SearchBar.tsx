@@ -155,12 +155,13 @@ export default function SearchBar({
       query: string,
       orTagsStr: string,
       andTagsStr: string,
-      notTagsStr: string
+      notTagsStr: string,
+      commId: string
     ) => {
-      if (!query.trim()) {
-        onSearchClear();
-        return;
-      }
+      // if (!query.trim()) {
+      //   onSearchClear();
+      //   return;
+      // }
 
       setIsSearching(true);
       try {
@@ -169,7 +170,7 @@ export default function SearchBar({
           orTags: orTagsStr,
           andTags: andTagsStr,
           notTags: notTagsStr,
-          communityId,
+          communityId: commId || communityId,
         });
         onSearchResults(results);
       } catch (error) {
@@ -206,25 +207,48 @@ export default function SearchBar({
     onSearchClear();
   };
 
+  // Manual search trigger
+  const handleManualSearch = () => {
+    console.log("Manual search triggered");
+    performSearch(searchQuery, orTags, andTags, notTags, selectedCommunityId);
+  };
+
+  // Handle Enter key press
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      handleManualSearch();
+    }
+  };
+
   return (
     <div className="mb-6 space-y-3">
-      {/* Main search input */}
-      <div className="relative">
-        <input
-          type="text"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Search posts by keyword..."
-          className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-        {searchQuery && (
-          <button
-            onClick={handleClear}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-          >
-            ✕
-          </button>
-        )}
+      {/* Main search input with search button */}
+      <div className="flex gap-2">
+        <div className="relative flex-1">
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyPress={handleKeyPress}
+            placeholder="Search posts by keyword..."
+            className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          {searchQuery && (
+            <button
+              onClick={handleClear}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            >
+              ✕
+            </button>
+          )}
+        </div>
+        <button
+          onClick={handleManualSearch}
+          disabled={isSearching}
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2"
+        >
+          Search
+        </button>
       </div>
 
       {/* Community filter dropdown */}

@@ -39,6 +39,7 @@ import {
   XCircle,
   AlertTriangle,
   FileText,
+  Clock,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import AppLayout from "@/components/AppLayout";
@@ -104,6 +105,12 @@ export default function CommunitiesPage() {
   );
   const { toast } = useToast();
 
+  // Membership status tracking for discover communities
+  const [membershipStatus, setMembershipStatus] = useState<
+    Record<string, "none" | "pending" | "approved" | "owner">
+  >({});
+  const [loadingMembershipStatus, setLoadingMembershipStatus] = useState(false);
+
   // Form states
   const [formData, setFormData] = useState({
     name: "",
@@ -161,6 +168,26 @@ export default function CommunitiesPage() {
       setDiscoverCommunities(data.communities);
       setCurrentPage(data.page);
       setTotalPages(data.totalPages);
+
+      // Fetch membership status for each community if user is logged in
+      if (userId) {
+        const statuses: Record<
+          string,
+          "none" | "pending" | "approved" | "owner"
+        > = {};
+        for (const community of data.communities) {
+          try {
+            const result = await communityApi.getMembershipStatus(
+              community.id,
+              userId
+            );
+            statuses[community.id] = result.status;
+          } catch (err) {
+            statuses[community.id] = "none";
+          }
+        }
+        setMembershipStatus((prev) => ({ ...prev, ...statuses }));
+      }
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Failed to fetch communities"
@@ -329,6 +356,8 @@ export default function CommunitiesPage() {
           result.message ||
           "Join request submitted. Waiting for admin approval.",
       });
+      // Update membership status
+      setMembershipStatus((prev) => ({ ...prev, [communityId]: "pending" }));
       await fetchJoinedCommunities();
       await fetchDiscoverCommunities(currentPage);
     } catch (err) {
@@ -336,6 +365,32 @@ export default function CommunitiesPage() {
         title: "Error",
         description:
           err instanceof Error ? err.message : "Failed to join community",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Cancel join request
+  const handleCancelJoinRequest = async (communityId: string) => {
+    if (!userId) return;
+
+    setLoading(true);
+    try {
+      await communityApi.cancelJoinRequest(communityId, userId);
+      toast({
+        title: "Success",
+        description: "Join request cancelled",
+      });
+      // Update membership status
+      setMembershipStatus((prev) => ({ ...prev, [communityId]: "none" }));
+      await fetchDiscoverCommunities(currentPage);
+    } catch (err) {
+      toast({
+        title: "Error",
+        description:
+          err instanceof Error ? err.message : "Failed to cancel join request",
         variant: "destructive",
       });
     } finally {
@@ -549,6 +604,70 @@ export default function CommunitiesPage() {
     );
   };
 
+  // Get membership status for a community
+  const getMembershipStatus = (communityId: string) => {
+    // Check if user owns this community
+    if (ownedCommunities.some((c) => c.id === communityId)) {
+      return "owner";
+    }
+    // Check if user is an approved member
+    if (joinedCommunities.some((c) => c.id === communityId)) {
+      return "approved";
+    }
+    // Check cached membership status
+    return membershipStatus[communityId] || "none";
+  };
+
+  // Render join/leave button based on membership status
+  const renderMembershipButton = (community: Community) => {
+    const status = getMembershipStatus(community.id);
+
+    switch (status) {
+      case "owner":
+        return (
+          <Button variant="secondary" className="flex-1" disabled>
+            <Users className="h-4 w-4 mr-2" />
+            Owner
+          </Button>
+        );
+      case "approved":
+        return (
+          <Button
+            variant="outline"
+            className="flex-1"
+            onClick={() => handleLeave(community.id)}
+            disabled={loading}
+          >
+            <UserMinus className="h-4 w-4 mr-2" />
+            Leave
+          </Button>
+        );
+      case "pending":
+        return (
+          <Button
+            variant="outline"
+            className="flex-1"
+            onClick={() => handleCancelJoinRequest(community.id)}
+            disabled={loading}
+          >
+            <Clock className="h-4 w-4 mr-2" />
+            Cancel Request
+          </Button>
+        );
+      default:
+        return (
+          <Button
+            className="flex-1"
+            onClick={() => handleJoin(community.id)}
+            disabled={loading}
+          >
+            <UserPlus className="h-4 w-4 mr-2" />
+            Join
+          </Button>
+        );
+    }
+  };
+
   // Community Card component
   const CommunityCard = ({
     community,
@@ -585,6 +704,14 @@ export default function CommunitiesPage() {
                   </>
                 )}
               </Badge>
+              {getMembershipStatus(community.id) === "pending" && (
+                <Badge
+                  variant="outline"
+                  className="text-yellow-600 border-yellow-600"
+                >
+                  <Clock className="h-3 w-3 mr-1" /> Pending
+                </Badge>
+              )}
               <span className="text-xs text-muted-foreground">
                 {new Date(community.created_at).toLocaleDateString()}
               </span>
@@ -642,30 +769,7 @@ export default function CommunitiesPage() {
         )}
       </CardContent>
       <CardFooter className="flex gap-2">
-        {showJoinLeave && (
-          <>
-            {isMember(community.id) ? (
-              <Button
-                variant="outline"
-                className="flex-1"
-                onClick={() => handleLeave(community.id)}
-                disabled={loading}
-              >
-                <UserMinus className="h-4 w-4 mr-2" />
-                Leave
-              </Button>
-            ) : (
-              <Button
-                className="flex-1"
-                onClick={() => handleJoin(community.id)}
-                disabled={loading}
-              >
-                <UserPlus className="h-4 w-4 mr-2" />
-                Join
-              </Button>
-            )}
-          </>
-        )}
+        {showJoinLeave && renderMembershipButton(community)}
         {showManage && !communityStats[community.id] && (
           <Button
             variant="outline"

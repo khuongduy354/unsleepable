@@ -200,6 +200,43 @@ export const communityApi = {
     }
   },
 
+  // Get membership status for a community
+  async getMembershipStatus(
+    communityId: string,
+    userId: string
+  ): Promise<{ status: "none" | "pending" | "approved" | "owner" }> {
+    const response = await fetch(
+      `/api/community/${communityId}/membership-status`,
+      {
+        headers: {
+          "x-user-id": userId,
+        },
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Failed to get membership status");
+    }
+
+    return await response.json();
+  },
+
+  // Cancel a pending join request
+  async cancelJoinRequest(communityId: string, userId: string): Promise<void> {
+    const response = await fetch(`/api/community/${communityId}/cancel-join`, {
+      method: "POST",
+      headers: {
+        "x-user-id": userId,
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Failed to cancel join request");
+    }
+  },
+
   // Get pending posts for admin approval
   async getPendingPosts(userId: string): Promise<{ posts: any[] }> {
     const response = await fetch("/api/admin/posts/pending", {
@@ -346,6 +383,43 @@ export const communityApi = {
     if (!response.ok) {
       const errorData = await response.json();
       throw new Error(errorData.error || "Failed to reject member");
+    }
+  },
+
+  // Get user's membership status in a community
+  async getMembershipStatus(
+    communityId: string,
+    userId: string
+  ): Promise<{ status: "none" | "pending" | "approved" | "owner" }> {
+    const response = await fetch(
+      `/api/community/${communityId}/membership-status`,
+      {
+        headers: {
+          "x-user-id": userId,
+        },
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Failed to get membership status");
+    }
+
+    return await response.json();
+  },
+
+  // Cancel a pending join request
+  async cancelJoinRequest(communityId: string, userId: string): Promise<void> {
+    const response = await fetch(`/api/community/${communityId}/cancel-join`, {
+      method: "POST",
+      headers: {
+        "x-user-id": userId,
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Failed to cancel join request");
     }
   },
 };

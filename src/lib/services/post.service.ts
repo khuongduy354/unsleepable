@@ -32,9 +32,62 @@ export class PostService implements IPostService {
 
   // Fetch posts with 'pending' status
   async getPendingPosts(filters?: PostFilters): Promise<Post[]> {
-    // Fetch posts with status 'pending'
-    const allPosts = await this.getPosts(filters);
-    return allPosts.filter((post) => post.status === "pending");
+    // Directly query for pending posts from repository
+    const { data: posts, error } = await (this.postRepository as any).supabase
+      .from("Post")
+      .select(
+        `
+        *,
+        author:UserAccount!Post_user_id_fkey (
+          username,
+          email
+        ),
+        community:Community!Post_community_id_fkey (
+          name
+        )
+      `
+      )
+      .eq("status", "pending")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      throw new Error(`Failed to fetch pending posts: ${error.message}`);
+    }
+
+    return posts || [];
+  }
+
+  // Fetch pending posts for communities owned by admin
+  async getPendingPostsByAdmin(adminId: string): Promise<Post[]> {
+    if (!adminId) {
+      throw new Error("Admin ID is required");
+    }
+
+    if (!this.communityRepository) {
+      // If no community repository, return all pending posts (fallback)
+      return this.getPendingPosts();
+    }
+
+    // Get communities owned by admin
+    const ownedCommunities = await this.communityRepository.findByOwnerId(
+      adminId,
+      1,
+      1000
+    );
+
+    const ownedCommunityIds = ownedCommunities.communities.map((c) => c.id);
+
+    if (ownedCommunityIds.length === 0) {
+      return [];
+    }
+
+    // Get all pending posts
+    const allPendingPosts = await this.getPendingPosts();
+
+    // Filter to only include posts from owned communities
+    return allPendingPosts.filter((post) =>
+      ownedCommunityIds.includes(post.community_id)
+    );
   }
 
   // Approve posts - validates that adminId is the owner of the post's community

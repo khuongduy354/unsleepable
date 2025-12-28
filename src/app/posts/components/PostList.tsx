@@ -1,8 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import { Post } from "@/lib/types/post.type";
 import { useRouter } from "next/navigation";
-import { postApi } from "@/lib/api";
+import { postApi, reportApi } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -11,9 +12,25 @@ import {
   CardHeader,
 } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { MessageSquare, ThumbsUp, ThumbsDown, Trash2 } from "lucide-react";
+import {
+  MessageSquare,
+  ThumbsUp,
+  ThumbsDown,
+  Trash2,
+  Flag,
+} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useUser } from "@/contexts/UserContext";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 
 interface PostListProps {
   posts: Post[];
@@ -23,6 +40,66 @@ export default function PostList({ posts }: PostListProps) {
   const router = useRouter();
   const { toast } = useToast();
   const { userId } = useUser();
+
+  // Report dialog state
+  const [reportDialogOpen, setReportDialogOpen] = useState(false);
+  const [reportPostId, setReportPostId] = useState<string | null>(null);
+  const [reportReason, setReportReason] = useState("");
+  const [submittingReport, setSubmittingReport] = useState(false);
+
+  const handleReportClick = (postId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!userId) {
+      toast({
+        title: "Error",
+        description: "Please login to report posts",
+        variant: "destructive",
+      });
+      return;
+    }
+    setReportPostId(postId);
+    setReportReason("");
+    setReportDialogOpen(true);
+  };
+
+  const handleSubmitReport = async () => {
+    if (!userId || !reportPostId || !reportReason.trim()) {
+      toast({
+        title: "Error",
+        description: "Please provide a reason for the report",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setSubmittingReport(true);
+    try {
+      await reportApi.create(
+        {
+          reportedEntityId: reportPostId,
+          reportedEntityType: "post",
+          reason: reportReason.trim(),
+        },
+        userId
+      );
+      toast({
+        title: "Success",
+        description: "Report submitted successfully",
+      });
+      setReportDialogOpen(false);
+      setReportPostId(null);
+      setReportReason("");
+    } catch (error) {
+      toast({
+        title: "Error",
+        description:
+          error instanceof Error ? error.message : "Failed to submit report",
+        variant: "destructive",
+      });
+    } finally {
+      setSubmittingReport(false);
+    }
+  };
 
   const handleDeletePost = async (postId: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -193,10 +270,61 @@ export default function PostList({ posts }: PostListProps) {
                 <MessageSquare className="w-4 h-4" />
                 <span>{post.comments_count || 0}</span>
               </Button>
+              {!isOwnPost && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={(e) => handleReportClick(post.id, e)}
+                  className="gap-2 ml-auto text-muted-foreground hover:text-destructive"
+                >
+                  <Flag className="w-4 h-4" />
+                </Button>
+              )}
             </CardFooter>
           </Card>
         );
       })}
+
+      {/* Report Dialog */}
+      <Dialog open={reportDialogOpen} onOpenChange={setReportDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Report Post</DialogTitle>
+            <DialogDescription>
+              Please provide a reason for reporting this post. Reports help us
+              maintain a healthy community.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="report-reason">Reason</Label>
+              <Textarea
+                id="report-reason"
+                placeholder="Describe why you are reporting this post..."
+                value={reportReason}
+                onChange={(e) => setReportReason(e.target.value)}
+                rows={4}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setReportDialogOpen(false)}
+              disabled={submittingReport}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleSubmitReport}
+              disabled={submittingReport || !reportReason.trim()}
+            >
+              {submittingReport ? "Submitting..." : "Submit Report"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

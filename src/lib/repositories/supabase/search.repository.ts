@@ -13,6 +13,7 @@ export class SupabaseSearchRepository implements ISearchRepository {
       query,
       tagFilters = [],
       communityId = null,
+      userId = null,
       limit = 20,
       offset = 0,
     } = params;
@@ -23,11 +24,12 @@ export class SupabaseSearchRepository implements ISearchRepository {
     const notTags = tagFilters.find((f) => f.operator === "NOT")?.tags || null;
 
     const { data, error } = await this.supabase.rpc("search_posts_with_tags", {
-      search_query: query,
+      search_query: query || "",
       or_tags: orTags,
       and_tags: andTags,
       not_tags: notTags,
       community_id_filter: communityId,
+      current_user_id: userId,
       limit_count: limit,
       offset_count: offset,
     });
