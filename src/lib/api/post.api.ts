@@ -66,6 +66,7 @@ export const postApi = {
       title?: string;
       content?: string;
       shortUrl?: string;
+      summary?: string;
     }
   ) {
     const res = await fetch(`/api/post/${id}`, {

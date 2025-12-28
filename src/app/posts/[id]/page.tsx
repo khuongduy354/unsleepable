@@ -167,6 +167,8 @@ export default function PostDetailPage() {
         variant: "destructive",
       });
     }
+  };
+
   const handleDelete = async () => {
     if (!confirm("Are you sure you want to delete this post?")) return;
 
@@ -206,7 +208,7 @@ export default function PostDetailPage() {
       const { summary } = await response.json();
 
       // Update post with summary
-      await postApi.update(postId, userId, { summary });
+      await postApi.update(postId, { summary });
 
       setPost({ ...post, summary });
       setShowSummary(true);
