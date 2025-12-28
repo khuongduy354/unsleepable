@@ -6,3 +6,4 @@ export { searchApi } from "./search.api";
 export { commentApi } from "./comment.api";
 export { messageApi } from "./message.api";
 export { notificationApi } from "./notification.api";
+export { userApi } from "./user.api";
