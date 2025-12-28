@@ -83,4 +83,16 @@ export const userApi = {
     const data = await response.json();
     return data.available;
   },
+
+  // Get user by ID
+  async getUserById(userId: string): Promise<Partial<UserProfile>> {
+    const response = await fetch(`/api/user/profile/${userId}`);
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || "Failed to fetch user");
+    }
+
+    return await response.json();
+  },
 };

@@ -44,6 +44,13 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, []);
 
+  // Auto scroll khi messages thay đổi
+  useEffect(() => {
+    if (!loading && messages.length > 0) {
+      scrollToBottom();
+    }
+  }, [messages, loading, scrollToBottom]);
+
   // Logic tải lịch sử
   useEffect(() => {
     const fetchHistory = async () => {
@@ -51,8 +58,6 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
       try {
         const history = await messageApi.getHistory(partnerId);
         setMessages(history);
-        // Cuộn xuống sau khi load xong
-        setTimeout(scrollToBottom, 100);
       } catch (error) {
         console.error("Error fetching chat history:", error);
         setMessages([]);
@@ -61,7 +66,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
       }
     };
     fetchHistory();
-  }, [partnerId, scrollToBottom]);
+  }, [partnerId]);
 
   // Logic Realtime với xử lý kết nối tốt hơn
   useEffect(() => {
@@ -103,18 +108,13 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
               const isDuplicate = prevMessages.some(msg => msg.id === newMessage.id);
               if (isDuplicate) return prevMessages;
               
-              const updatedMessages = [...prevMessages, newMessage];
-              
-              // Callback để update ConversationList
-              if (onNewMessage) {
-                onNewMessage(newMessage);
-              }
-              
-              // Auto scroll
-              setTimeout(scrollToBottom, 100);
-              
-              return updatedMessages;
+              return [...prevMessages, newMessage];
             });
+            
+            // Callback để update ConversationList (chỉ 1 setTimeout duy nhất)
+            if (onNewMessage) {
+              setTimeout(() => onNewMessage(newMessage), 0);
+            }
           }
         }
       )
@@ -138,7 +138,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
         channelRef.current = null;
       }
     };
-  }, [currentUserId, partnerId, loading, scrollToBottom, onNewMessage]);
+  }, [currentUserId, partnerId, loading, onNewMessage]);
 
   // --- UI HIỂN THỊ ---
 
