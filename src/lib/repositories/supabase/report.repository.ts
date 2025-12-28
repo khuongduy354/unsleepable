@@ -68,6 +68,7 @@ export class SupabaseReportRepository implements IReportRepository {
   }
 
   async findPendingReports(): Promise<Report[]> {
+    // First get all pending reports
     const { data: reports, error } = await this.supabase
       .from(REPORT_TABLE)
       .select("*")
@@ -78,7 +79,18 @@ export class SupabaseReportRepository implements IReportRepository {
       throw new Error(`Failed to fetch pending reports: ${error.message}`);
     }
 
-    return reports || [];
+    // Then for each report, get the community_id
+    const mappedReports = await Promise.all(
+      (reports || []).map(async (report: any) => {
+        const community_id = await this.getCommunityIdForReport(report);
+        return {
+          ...report,
+          community_id,
+        } as Report;
+      })
+    );
+
+    return mappedReports;
   }
 
   async updateReportStatus(

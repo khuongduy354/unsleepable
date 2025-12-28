@@ -78,6 +78,7 @@ interface Report {
   status: string;
   created_at: string;
   reporter_id: string;
+  community_id?: string | null;
 }
 
 interface PendingMember {
@@ -130,6 +131,9 @@ export default function CommunitiesPage() {
   const [pendingReports, setPendingReports] = useState<Report[]>([]);
   const [pendingMembers, setPendingMembers] = useState<PendingMember[]>([]);
   const [loadingPending, setLoadingPending] = useState(false);
+  const [selectedCommunityId, setSelectedCommunityId] = useState<string | null>(
+    null
+  );
 
   // Get userId from localStorage on mount
   useEffect(() => {
@@ -226,12 +230,25 @@ export default function CommunitiesPage() {
   };
 
   // Fetch pending posts for admin
-  const fetchPendingPosts = async () => {
+  const fetchPendingPosts = async (communityId?: string) => {
     if (!userId) return;
     setLoadingPending(true);
     try {
       const data = await communityApi.getPendingPosts(userId);
-      setPendingPosts(data.posts || []);
+      // Filter by owned communities and selected community
+      const ownedCommunityIds = ownedCommunities.map((c) => c.id);
+      const filtered = (data.posts || []).filter((p: PendingPost) => {
+        // Only show posts from owned communities
+        if (!p.community_id || !ownedCommunityIds.includes(p.community_id)) {
+          return false;
+        }
+        // If a specific community is selected, filter by it
+        if (communityId && p.community_id !== communityId) {
+          return false;
+        }
+        return true;
+      });
+      setPendingPosts(filtered);
     } catch (err) {
       console.error("Failed to fetch pending posts:", err);
     } finally {
@@ -240,12 +257,25 @@ export default function CommunitiesPage() {
   };
 
   // Fetch pending reports for admin
-  const fetchPendingReports = async () => {
+  const fetchPendingReports = async (communityId?: string) => {
     if (!userId) return;
     setLoadingPending(true);
     try {
       const data = await communityApi.getPendingReports(userId);
-      setPendingReports(data.reports || []);
+      // Filter by owned communities and selected community
+      const ownedCommunityIds = ownedCommunities.map((c) => c.id);
+      const filtered = (data.reports || []).filter((r: Report) => {
+        // Only show reports from owned communities
+        if (!r.community_id || !ownedCommunityIds.includes(r.community_id)) {
+          return false;
+        }
+        // If a specific community is selected, filter by it
+        if (communityId && r.community_id !== communityId) {
+          return false;
+        }
+        return true;
+      });
+      setPendingReports(filtered);
     } catch (err) {
       console.error("Failed to fetch pending reports:", err);
     } finally {
@@ -254,12 +284,17 @@ export default function CommunitiesPage() {
   };
 
   // Fetch pending member requests for all owned communities
-  const fetchPendingMembers = async () => {
+  const fetchPendingMembers = async (communityId?: string) => {
     if (!userId || ownedCommunities.length === 0) return;
     setLoadingPending(true);
     try {
       const allPendingMembers: PendingMember[] = [];
-      for (const community of ownedCommunities) {
+      // If a specific community is selected, only fetch for that one
+      const communitiesToFetch = communityId
+        ? ownedCommunities.filter((c) => c.id === communityId)
+        : ownedCommunities;
+
+      for (const community of communitiesToFetch) {
         try {
           const data = await communityApi.getPendingMembers(
             community.id,
@@ -359,9 +394,17 @@ export default function CommunitiesPage() {
   // Load pending items when switching to owned communities tab
   useEffect(() => {
     if (activeTab === "owned" && userId && ownedCommunities.length > 0) {
-      fetchPendingPosts();
-      fetchPendingMembers();
-      fetchPendingReports();
+      // Auto-select the first community if only one exists
+      if (ownedCommunities.length === 1) {
+        const communityId = ownedCommunities[0].id;
+        setSelectedCommunityId(communityId);
+        fetchPendingPosts(communityId);
+        fetchPendingMembers(communityId);
+        fetchPendingReports(communityId);
+      } else {
+        // Reset selection when there are multiple communities
+        setSelectedCommunityId(null);
+      }
     }
   }, [activeTab, userId, ownedCommunities]);
 
@@ -1036,216 +1079,272 @@ export default function CommunitiesPage() {
                 <div className="border-t pt-8">
                   <h2 className="text-2xl font-bold mb-4">Admin Panel</h2>
 
-                  <Tabs defaultValue="pending-posts">
-                    <TabsList>
-                      <TabsTrigger
-                        value="pending-posts"
-                        onClick={() => fetchPendingPosts()}
-                      >
-                        <FileText className="h-4 w-4 mr-2" />
-                        Pending Posts
-                      </TabsTrigger>
-                      <TabsTrigger
-                        value="pending-members"
-                        onClick={() => fetchPendingMembers()}
-                      >
-                        <UserPlus className="h-4 w-4 mr-2" />
-                        Join Requests
-                      </TabsTrigger>
-                      <TabsTrigger
-                        value="reports"
-                        onClick={() => fetchPendingReports()}
-                      >
-                        <AlertTriangle className="h-4 w-4 mr-2" />
-                        Reports
-                      </TabsTrigger>
-                    </TabsList>
+                  {/* Community Selector - Only show if multiple communities */}
+                  {ownedCommunities.length > 1 && (
+                    <Card className="mb-6">
+                      <CardHeader>
+                        <CardTitle>Select Community</CardTitle>
+                        <CardDescription>
+                          Choose a community to manage its pending items
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <Select
+                          value={selectedCommunityId || ""}
+                          onValueChange={(value) => {
+                            setSelectedCommunityId(value);
+                            fetchPendingPosts(value);
+                            fetchPendingMembers(value);
+                            fetchPendingReports(value);
+                          }}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a community..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {ownedCommunities.map((community) => (
+                              <SelectItem
+                                key={community.id}
+                                value={community.id}
+                              >
+                                {community.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </CardContent>
+                    </Card>
+                  )}
 
-                    {/* Pending Posts */}
-                    <TabsContent value="pending-posts" className="mt-4">
-                      {loadingPending ? (
-                        <div className="flex justify-center py-8">
-                          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                        </div>
-                      ) : pendingPosts.length === 0 ? (
-                        <Card>
-                          <CardContent className="py-8 text-center text-muted-foreground">
-                            No pending posts to review.
-                          </CardContent>
-                        </Card>
-                      ) : (
-                        <div className="space-y-4">
-                          {pendingPosts.map((post) => (
-                            <Card key={post.id}>
-                              <CardHeader>
-                                <CardTitle className="text-lg">
-                                  {post.title}
-                                </CardTitle>
-                                <CardDescription>
-                                  By {post.author_name || post.user_id} •{" "}
-                                  {new Date(post.created_at).toLocaleString()}
-                                </CardDescription>
-                              </CardHeader>
-                              <CardContent>
-                                <p className="text-sm text-muted-foreground line-clamp-3">
-                                  {post.content}
-                                </p>
-                              </CardContent>
-                              <CardFooter className="flex gap-2">
-                                <Button
-                                  size="sm"
-                                  onClick={() => handleApprovePost(post.id)}
-                                >
-                                  <CheckCircle className="h-4 w-4 mr-2" />
-                                  Approve
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="destructive"
-                                  onClick={() => handleRejectPost(post.id)}
-                                >
-                                  <XCircle className="h-4 w-4 mr-2" />
-                                  Reject
-                                </Button>
-                              </CardFooter>
-                            </Card>
-                          ))}
-                        </div>
-                      )}
-                    </TabsContent>
+                  {/* Show admin tabs only if a community is selected (or only 1 community exists) */}
+                  {selectedCommunityId ? (
+                    <Tabs defaultValue="pending-posts">
+                      <TabsList>
+                        <TabsTrigger
+                          value="pending-posts"
+                          onClick={() => fetchPendingPosts(selectedCommunityId)}
+                        >
+                          <FileText className="h-4 w-4 mr-2" />
+                          Pending Posts
+                        </TabsTrigger>
+                        <TabsTrigger
+                          value="pending-members"
+                          onClick={() =>
+                            fetchPendingMembers(selectedCommunityId)
+                          }
+                        >
+                          <UserPlus className="h-4 w-4 mr-2" />
+                          Join Requests
+                        </TabsTrigger>
+                        <TabsTrigger
+                          value="reports"
+                          onClick={() =>
+                            fetchPendingReports(selectedCommunityId)
+                          }
+                        >
+                          <AlertTriangle className="h-4 w-4 mr-2" />
+                          Reports
+                        </TabsTrigger>
+                      </TabsList>
 
-                    {/* Pending Members / Join Requests */}
-                    <TabsContent value="pending-members" className="mt-4">
-                      {loadingPending ? (
-                        <div className="flex justify-center py-8">
-                          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                        </div>
-                      ) : pendingMembers.length === 0 ? (
-                        <Card>
-                          <CardContent className="py-8 text-center text-muted-foreground">
-                            No pending join requests to review.
-                          </CardContent>
-                        </Card>
-                      ) : (
-                        <div className="space-y-4">
-                          {pendingMembers.map((member) => (
-                            <Card
-                              key={`${member.community_id}-${member.user_id}`}
-                            >
-                              <CardHeader>
-                                <CardTitle className="text-lg flex items-center gap-2">
-                                  <UserPlus className="h-5 w-5 text-blue-500" />
-                                  {member.username ||
-                                    member.email ||
-                                    member.user_id}
-                                </CardTitle>
-                                <CardDescription>
-                                  Wants to join{" "}
-                                  <strong>{member.community_name}</strong> •{" "}
-                                  {new Date(
-                                    member.requested_at
-                                  ).toLocaleString()}
-                                </CardDescription>
-                              </CardHeader>
-                              <CardContent>
-                                <p className="text-sm text-muted-foreground">
-                                  User: {member.email || member.user_id}
-                                </p>
-                              </CardContent>
-                              <CardFooter className="flex gap-2">
-                                <Button
-                                  size="sm"
-                                  onClick={() =>
-                                    handleApproveMember(
-                                      member.community_id,
-                                      member.user_id
-                                    )
-                                  }
-                                >
-                                  <CheckCircle className="h-4 w-4 mr-2" />
-                                  Approve
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="destructive"
-                                  onClick={() =>
-                                    handleRejectMember(
-                                      member.community_id,
-                                      member.user_id
-                                    )
-                                  }
-                                >
-                                  <XCircle className="h-4 w-4 mr-2" />
-                                  Reject
-                                </Button>
-                              </CardFooter>
-                            </Card>
-                          ))}
-                        </div>
-                      )}
-                    </TabsContent>
+                      {/* Pending Posts */}
+                      <TabsContent value="pending-posts" className="mt-4">
+                        {loadingPending ? (
+                          <div className="flex justify-center py-8">
+                            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                          </div>
+                        ) : pendingPosts.length === 0 ? (
+                          <Card>
+                            <CardContent className="py-8 text-center text-muted-foreground">
+                              No pending posts to review.
+                            </CardContent>
+                          </Card>
+                        ) : (
+                          <div className="space-y-4">
+                            {pendingPosts.map((post) => (
+                              <Card key={post.id}>
+                                <CardHeader>
+                                  <CardTitle className="text-lg">
+                                    {post.title}
+                                  </CardTitle>
+                                  <CardDescription>
+                                    By {post.author_name || post.user_id} •{" "}
+                                    {new Date(post.created_at).toLocaleString()}
+                                  </CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                  <p className="text-sm text-muted-foreground line-clamp-3">
+                                    {post.content}
+                                  </p>
+                                </CardContent>
+                                <CardFooter className="flex gap-2">
+                                  <Button
+                                    size="sm"
+                                    onClick={() => handleApprovePost(post.id)}
+                                  >
+                                    <CheckCircle className="h-4 w-4 mr-2" />
+                                    Approve
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="destructive"
+                                    onClick={() => handleRejectPost(post.id)}
+                                  >
+                                    <XCircle className="h-4 w-4 mr-2" />
+                                    Reject
+                                  </Button>
+                                </CardFooter>
+                              </Card>
+                            ))}
+                          </div>
+                        )}
+                      </TabsContent>
 
-                    {/* Reports */}
-                    <TabsContent value="reports" className="mt-4">
-                      {loadingPending ? (
-                        <div className="flex justify-center py-8">
-                          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                        </div>
-                      ) : pendingReports.length === 0 ? (
-                        <Card>
-                          <CardContent className="py-8 text-center text-muted-foreground">
-                            No pending reports to review.
-                          </CardContent>
-                        </Card>
-                      ) : (
-                        <div className="space-y-4">
-                          {pendingReports.map((report) => (
-                            <Card key={report.id}>
-                              <CardHeader>
-                                <CardTitle className="text-lg flex items-center gap-2">
-                                  <AlertTriangle className="h-5 w-5 text-yellow-500" />
-                                  {report.reported_entity_type} Report
-                                </CardTitle>
-                                <CardDescription>
-                                  Reported on{" "}
-                                  {new Date(report.created_at).toLocaleString()}
-                                </CardDescription>
-                              </CardHeader>
-                              <CardContent>
-                                <p className="text-sm">
-                                  <strong>Reason:</strong> {report.reason}
-                                </p>
-                                <p className="text-xs text-muted-foreground mt-2">
-                                  Entity ID: {report.reported_entity_id}
-                                </p>
-                              </CardContent>
-                              <CardFooter className="flex gap-2">
-                                <Button
-                                  size="sm"
-                                  onClick={() =>
-                                    handleReportDecision(report.id, "APPROVE")
-                                  }
-                                >
-                                  <CheckCircle className="h-4 w-4 mr-2" />
-                                  Delete Post
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() =>
-                                    handleReportDecision(report.id, "REJECT")
-                                  }
-                                >
-                                  <XCircle className="h-4 w-4 mr-2" />
-                                  Dismiss Report
-                                </Button>
-                              </CardFooter>
-                            </Card>
-                          ))}
-                        </div>
-                      )}
-                    </TabsContent>
-                  </Tabs>
+                      {/* Pending Members / Join Requests */}
+                      <TabsContent value="pending-members" className="mt-4">
+                        {loadingPending ? (
+                          <div className="flex justify-center py-8">
+                            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                          </div>
+                        ) : pendingMembers.length === 0 ? (
+                          <Card>
+                            <CardContent className="py-8 text-center text-muted-foreground">
+                              No pending join requests to review.
+                            </CardContent>
+                          </Card>
+                        ) : (
+                          <div className="space-y-4">
+                            {pendingMembers.map((member) => (
+                              <Card
+                                key={`${member.community_id}-${member.user_id}`}
+                              >
+                                <CardHeader>
+                                  <CardTitle className="text-lg flex items-center gap-2">
+                                    <UserPlus className="h-5 w-5 text-blue-500" />
+                                    {member.username ||
+                                      member.email ||
+                                      member.user_id}
+                                  </CardTitle>
+                                  <CardDescription>
+                                    Wants to join{" "}
+                                    <strong>{member.community_name}</strong> •{" "}
+                                    {new Date(
+                                      member.requested_at
+                                    ).toLocaleString()}
+                                  </CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                  <p className="text-sm text-muted-foreground">
+                                    User: {member.email || member.user_id}
+                                  </p>
+                                </CardContent>
+                                <CardFooter className="flex gap-2">
+                                  <Button
+                                    size="sm"
+                                    onClick={() =>
+                                      handleApproveMember(
+                                        member.community_id,
+                                        member.user_id
+                                      )
+                                    }
+                                  >
+                                    <CheckCircle className="h-4 w-4 mr-2" />
+                                    Approve
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="destructive"
+                                    onClick={() =>
+                                      handleRejectMember(
+                                        member.community_id,
+                                        member.user_id
+                                      )
+                                    }
+                                  >
+                                    <XCircle className="h-4 w-4 mr-2" />
+                                    Reject
+                                  </Button>
+                                </CardFooter>
+                              </Card>
+                            ))}
+                          </div>
+                        )}
+                      </TabsContent>
+
+                      {/* Reports */}
+                      <TabsContent value="reports" className="mt-4">
+                        {loadingPending ? (
+                          <div className="flex justify-center py-8">
+                            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                          </div>
+                        ) : pendingReports.length === 0 ? (
+                          <Card>
+                            <CardContent className="py-8 text-center text-muted-foreground">
+                              No pending reports to review.
+                            </CardContent>
+                          </Card>
+                        ) : (
+                          <div className="space-y-4">
+                            {pendingReports.map((report) => (
+                              <Card key={report.id}>
+                                <CardHeader>
+                                  <CardTitle className="text-lg flex items-center gap-2">
+                                    <AlertTriangle className="h-5 w-5 text-yellow-500" />
+                                    {report.reported_entity_type} Report
+                                  </CardTitle>
+                                  <CardDescription>
+                                    Reported on{" "}
+                                    {new Date(
+                                      report.created_at
+                                    ).toLocaleString()}
+                                  </CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                  <p className="text-sm">
+                                    <strong>Reason:</strong> {report.reason}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground mt-2">
+                                    Entity ID: {report.reported_entity_id}
+                                  </p>
+                                </CardContent>
+                                <CardFooter className="flex gap-2">
+                                  <Button
+                                    size="sm"
+                                    onClick={() =>
+                                      handleReportDecision(report.id, "APPROVE")
+                                    }
+                                  >
+                                    <CheckCircle className="h-4 w-4 mr-2" />
+                                    Delete Post
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() =>
+                                      handleReportDecision(report.id, "REJECT")
+                                    }
+                                  >
+                                    <XCircle className="h-4 w-4 mr-2" />
+                                    Dismiss Report
+                                  </Button>
+                                </CardFooter>
+                              </Card>
+                            ))}
+                          </div>
+                        )}
+                      </TabsContent>
+                    </Tabs>
+                  ) : (
+                    <Card>
+                      <CardContent className="py-12 text-center">
+                        <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                        <p className="text-muted-foreground">
+                          Please select a community above to view and manage its
+                          pending items.
+                        </p>
+                      </CardContent>
+                    </Card>
+                  )}
                 </div>
               </div>
             )}
