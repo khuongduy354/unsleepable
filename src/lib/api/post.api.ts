@@ -124,4 +124,17 @@ export const postApi = {
 
     return data;
   },
+
+  // Get trending posts
+  // TrendingScore = (Like - Dislike) + (Comment × 2) / (Hours + 1)^1.5
+  async getTrending(limit: number = 10) {
+    const res = await fetch(`/api/post/trending?limit=${limit}`);
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.error || "Failed to fetch trending posts");
+    }
+
+    return data.posts;
+  },
 };

@@ -56,7 +56,10 @@ export default function AppLayout({ children }: AppLayoutProps) {
       {/* Sidebar */}
       <aside className="w-64 bg-card text-card-foreground flex flex-col border-r">
         <div className="p-6 border-b">
-          <div className="flex items-center gap-2">
+          <div 
+            className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
+            onClick={() => router.push("/posts")}
+          >
             <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
               <MessageSquare className="w-5 h-5 text-primary-foreground" />
             </div>
@@ -74,6 +77,14 @@ export default function AppLayout({ children }: AppLayoutProps) {
           >
             <Home className="w-4 h-4" />
             Home
+          </Button>
+          <Button
+            variant={isActive("/posts/trending") ? "secondary" : "ghost"}
+            className="w-full justify-start gap-3"
+            onClick={() => router.push("/posts/trending")}
+          >
+            <TrendingUp className="w-4 h-4" />
+            Trending
           </Button>
           <Button
             variant={isActive("/communities") ? "secondary" : "ghost"}

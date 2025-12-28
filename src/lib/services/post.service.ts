@@ -148,6 +148,12 @@ export class PostService implements IPostService {
     return await this.postRepository.update(id, { status: "rejected" });
   }
 
+  // Get trending posts sorted by trending score
+  // Formula: TrendingScore = (Like - Dislike) + (Comment × 2) / (Hours + 1)^1.5
+  async getTrendingPosts(limit: number = 10): Promise<Post[]> {
+    return await this.postRepository.findTrending(limit);
+  }
+
   // // get reported posts
   // async getReportedPosts(filters?: PostFilters ): Promise<Post[]> {
   //   // Fetch posts with status_reported 'pending'

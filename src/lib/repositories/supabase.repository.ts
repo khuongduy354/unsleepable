@@ -182,6 +182,79 @@ export class SupabasePostRepository implements IPostRepository {
     });
   }
 
+  // Calculate trending score: (Like - Dislike) + (Comment × 2) / (Hours + 1)^1.5
+  private calculateTrendingScore(post: Post): number {
+    const now = new Date();
+    const createdAt = new Date(post.created_at);
+    const hoursSinceCreation = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60);
+    
+    const likes = post.likes_count || 0;
+    const dislikes = post.dislikes_count || 0;
+    const comments = post.comments_count || 0;
+    
+    // Formula: TrendingScore = (Like - Dislike) + (Comment × 2) / (Giờ + 1)^1.5
+    const engagementScore = (likes - dislikes) + (comments * 2);
+    const timeFactor = Math.pow(hoursSinceCreation + 1, 1.5);
+    
+    return engagementScore / timeFactor;
+  }
+
+  async findTrending(limit: number = 10): Promise<Post[]> {
+    // Fetch approved posts from the last 7 days for trending calculation
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    
+    const { data: posts, error } = await this.supabase
+      .from("Post")
+      .select(
+        `
+        *,
+        author:UserAccount!Post_user_id_fkey (
+          username,
+          email
+        ),
+        community:Community!Post_community_id_fkey (
+          name
+        )
+      `
+      )
+      .eq("status", "approved")
+      .gte("created_at", sevenDaysAgo.toISOString())
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      throw new Error(`Failed to fetch trending posts: ${error.message}`);
+    }
+
+    // Map posts and calculate trending score
+    const postsWithScore = (posts || []).map((post) => {
+      const author = post.author as any;
+      const community = post.community as any;
+      const mappedPost = {
+        ...post,
+        author: undefined,
+        author_email: author?.email,
+        author_name: author?.username || author?.email?.split("@")[0],
+        community_name: community?.name,
+        community: undefined,
+      } as Post;
+      
+      return {
+        post: mappedPost,
+        trendingScore: this.calculateTrendingScore(mappedPost),
+      };
+    });
+
+    // Sort by trending score (descending) and return top posts
+    return postsWithScore
+      .sort((a, b) => b.trendingScore - a.trendingScore)
+      .slice(0, limit)
+      .map(item => ({
+        ...item.post,
+        engagement_score: item.trendingScore,
+      }));
+  }
+
   async update(id: string, data: UpdatePostDTO): Promise<Post> {
     const { data: post, error } = await this.supabase
       .from("Post")
