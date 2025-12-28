@@ -28,6 +28,22 @@ export const notificationApi = {
     return await response.json();
   },
 
+  // Unsubscribe from push notifications
+  async unsubscribe() {
+    const response = await fetch("/api/notification/unsubscribe", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to unsubscribe from notifications");
+    }
+
+    return await response.json();
+  },
+
   // Get VAPID public key
   async getVapidKey() {
     const response = await fetch("/api/notification/vapid");

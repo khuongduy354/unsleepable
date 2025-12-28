@@ -1,10 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
 import { service } from "@/lib/setup/index";
+import { createClient } from "@/utils/supabase/server";
 
 export async function GET(request: NextRequest) {
   try {
+    // Get user ID from Supabase session
+    const supabase = await createClient();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const userId = session.user.id;
     const postService = await service.getPostService();
-    const pendingPosts = await postService.getPendingPosts();
+    const pendingPosts = await postService.getPendingPostsByAdmin(userId);
 
     return NextResponse.json({ posts: pendingPosts });
   } catch (error) {

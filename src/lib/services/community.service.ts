@@ -51,6 +51,11 @@ export interface ICommunityService {
     communityId: string,
     adminId: string
   ): Promise<PendingMember[]>;
+  getMembershipStatus(
+    communityId: string,
+    userId: string
+  ): Promise<"none" | "pending" | "approved" | "owner">;
+  cancelJoinRequest(communityId: string, userId: string): Promise<void>;
 }
 
 export class CommunityService implements ICommunityService {
@@ -397,5 +402,64 @@ export class CommunityService implements ICommunityService {
     }
 
     await this.communityRepository.removeMember(communityId, userId);
+  }
+
+  async getMembershipStatus(
+    communityId: string,
+    userId: string
+  ): Promise<"none" | "pending" | "approved" | "owner"> {
+    if (!communityId) {
+      throw new Error("Community ID is required");
+    }
+    if (!userId) {
+      throw new Error("User ID is required");
+    }
+
+    // Check if user is owner
+    const isOwner = await this.communityRepository.isOwner(communityId, userId);
+    if (isOwner) {
+      return "owner";
+    }
+
+    // Check if user has pending request
+    const hasPendingRequest = await this.communityRepository.hasPendingRequest(
+      communityId,
+      userId
+    );
+    if (hasPendingRequest) {
+      return "pending";
+    }
+
+    // Check if user is approved member
+    const isMember = await this.communityRepository.isMember(
+      communityId,
+      userId
+    );
+    if (isMember) {
+      return "approved";
+    }
+
+    return "none";
+  }
+
+  async cancelJoinRequest(communityId: string, userId: string): Promise<void> {
+    if (!communityId) {
+      throw new Error("Community ID is required");
+    }
+    if (!userId) {
+      throw new Error("User ID is required");
+    }
+
+    // Check if user has a pending request
+    const hasPendingRequest = await this.communityRepository.hasPendingRequest(
+      communityId,
+      userId
+    );
+    if (!hasPendingRequest) {
+      throw new Error("No pending join request found");
+    }
+
+    // Remove the pending request (rejectMember removes pending memberships)
+    await this.communityRepository.rejectMember(communityId, userId);
   }
 }

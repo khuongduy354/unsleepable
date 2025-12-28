@@ -32,9 +32,74 @@ export class PostService implements IPostService {
 
   // Fetch posts with 'pending' status
   async getPendingPosts(filters?: PostFilters): Promise<Post[]> {
-    // Fetch posts with status 'pending'
-    const allPosts = await this.getPosts(filters);
-    return allPosts.filter((post) => post.status === "pending");
+    // Directly query for pending posts from repository
+    const { data: posts, error } = await (this.postRepository as any).supabase
+      .from("Post")
+      .select(
+        `
+        *,
+        author:UserAccount!Post_user_id_fkey (
+          username,
+          email
+        ),
+        community:Community!Post_community_id_fkey (
+          name
+        )
+      `
+      )
+      .eq("status", "pending")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      throw new Error(`Failed to fetch pending posts: ${error.message}`);
+    }
+
+    // Map posts to include author info and community name
+    return (posts || []).map((post) => {
+      const author = post.author as any;
+      const community = post.community as any;
+      return {
+        ...post,
+        author: undefined,
+        author_email: author?.email,
+        author_name: author?.username || author?.email?.split("@")[0],
+        community_name: community?.name,
+        community: undefined,
+      } as Post;
+    });
+  }
+
+  // Fetch pending posts for communities owned by admin
+  async getPendingPostsByAdmin(adminId: string): Promise<Post[]> {
+    if (!adminId) {
+      throw new Error("Admin ID is required");
+    }
+
+    if (!this.communityRepository) {
+      // If no community repository, return all pending posts (fallback)
+      return this.getPendingPosts();
+    }
+
+    // Get communities owned by admin
+    const ownedCommunities = await this.communityRepository.findByOwnerId(
+      adminId,
+      1,
+      1000
+    );
+
+    const ownedCommunityIds = ownedCommunities.communities.map((c) => c.id);
+
+    if (ownedCommunityIds.length === 0) {
+      return [];
+    }
+
+    // Get all pending posts
+    const allPendingPosts = await this.getPendingPosts();
+
+    // Filter to only include posts from owned communities
+    return allPendingPosts.filter((post) =>
+      ownedCommunityIds.includes(post.community_id)
+    );
   }
 
   // Approve posts - validates that adminId is the owner of the post's community
@@ -111,7 +176,14 @@ export class PostService implements IPostService {
   // }
 
   async getPostById(id: string): Promise<Post | null> {
-    return await this.postRepository.findById(id);
+    const post = await this.postRepository.findById(id);
+
+    // Only return approved posts for public access
+    if (post && post.status !== "approved") {
+      return null;
+    }
+
+    return post;
   }
 
   async getPosts(filters?: PostFilters): Promise<Post[]> {
@@ -183,5 +255,82 @@ export class PostService implements IPostService {
     }
 
     await this.postRepository.deleteComment(id);
+  }
+
+  async reactToPost(
+    postId: string,
+    userId: string,
+    type: "like" | "dislike"
+  ): Promise<void> {
+    // Check if post exists
+    const post = await this.postRepository.findById(postId);
+    if (!post) {
+      throw new Error("Post not found");
+    }
+
+    // Check if user already reacted
+    const { data: existingReaction, error } = await (
+      this.postRepository as any
+    ).supabase
+      .from("Reaction")
+      .select("*")
+      .eq("post_id", postId)
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (error && error.code !== "PGRST116") {
+      throw new Error(`Failed to check existing reaction: ${error.message}`);
+    }
+
+    if (existingReaction) {
+      // If same type, remove the reaction (toggle off)
+      if (existingReaction.type === type) {
+        await (this.postRepository as any).supabase
+          .from("Reaction")
+          .delete()
+          .eq("id", existingReaction.id);
+
+        // Update post counts
+        const countField = type === "like" ? "likes_count" : "dislikes_count";
+        await (this.postRepository as any).supabase
+          .from("Post")
+          .update({ [countField]: Math.max(0, post[countField] - 1) })
+          .eq("id", postId);
+      } else {
+        // If different type, update the reaction
+        await (this.postRepository as any).supabase
+          .from("Reaction")
+          .update({ type })
+          .eq("id", existingReaction.id);
+
+        // Update both counts
+        const oldCountField =
+          existingReaction.type === "like" ? "likes_count" : "dislikes_count";
+        const newCountField =
+          type === "like" ? "likes_count" : "dislikes_count";
+
+        await (this.postRepository as any).supabase
+          .from("Post")
+          .update({
+            [oldCountField]: Math.max(0, post[oldCountField] - 1),
+            [newCountField]: post[newCountField] + 1,
+          })
+          .eq("id", postId);
+      }
+    } else {
+      // Create new reaction
+      await (this.postRepository as any).supabase.from("Reaction").insert({
+        post_id: postId,
+        user_id: userId,
+        type,
+      });
+
+      // Update post count
+      const countField = type === "like" ? "likes_count" : "dislikes_count";
+      await (this.postRepository as any).supabase
+        .from("Post")
+        .update({ [countField]: post[countField] + 1 })
+        .eq("id", postId);
+    }
   }
 }

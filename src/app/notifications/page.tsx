@@ -61,7 +61,7 @@ export default function NotificationsPage() {
       checkSubscription();
     }
 
-    // Load mock notifications
+    // Load real notifications
     loadNotifications();
   }, []);
 
@@ -75,36 +75,36 @@ export default function NotificationsPage() {
     }
   };
 
-  const loadNotifications = () => {
-    // Mock notifications - in production, fetch from API
-    const mockNotifications: Notification[] = [
-      {
-        id: "1",
-        type: "like",
-        title: "New Like",
-        message: "Someone liked your post 'Introduction to React'",
-        read: false,
-        created_at: new Date(Date.now() - 5 * 60000).toISOString(),
-      },
-      {
-        id: "2",
-        type: "comment",
-        title: "New Comment",
-        message: "User123 commented on your post",
-        read: false,
-        created_at: new Date(Date.now() - 30 * 60000).toISOString(),
-      },
-      {
-        id: "3",
-        type: "message",
-        title: "New Message",
-        message: "You have a new message from alice_wonder",
-        read: true,
-        created_at: new Date(Date.now() - 2 * 3600000).toISOString(),
-      },
-    ];
+  const loadNotifications = async () => {
+    try {
+      setLoading(true);
+      const userId = localStorage.getItem("userId");
 
-    setNotifications(mockNotifications);
+      if (!userId) {
+        console.log("No user ID found");
+        setNotifications([]);
+        return;
+      }
+
+      const response = await fetch("/api/notifications", {
+        headers: {
+          "x-user-id": userId,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setNotifications(data.notifications || []);
+      } else {
+        console.error("Failed to load notifications");
+        setNotifications([]);
+      }
+    } catch (error) {
+      console.error("Error loading notifications:", error);
+      setNotifications([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleEnablePush = async () => {
@@ -138,16 +138,21 @@ export default function NotificationsPage() {
       // Send subscription to server
       await notificationApi.subscribe(subscription);
 
-      setIsSubscribed(true);
+      // Check subscription again to confirm
+      await checkSubscription();
+
       toast({
         title: "Success",
-        description: "Push notifications enabled",
+        description: "Push notifications enabled successfully",
       });
     } catch (error) {
       console.error("Error enabling push:", error);
       toast({
         title: "Error",
-        description: "Failed to enable push notifications",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Failed to enable push notifications",
         variant: "destructive",
       });
     } finally {
@@ -157,32 +162,44 @@ export default function NotificationsPage() {
 
   const handleDisablePush = async () => {
     try {
+      setLoading(true);
       const registration = await navigator.serviceWorker.ready;
       const subscription = await registration.pushManager.getSubscription();
-      
+
       if (subscription) {
         await subscription.unsubscribe();
+        // Notify server to remove subscription
+        try {
+          await notificationApi.unsubscribe();
+        } catch (err) {
+          console.error("Failed to notify server:", err);
+        }
       }
 
-      setIsSubscribed(false);
+      // Check subscription again to confirm
+      await checkSubscription();
+
       toast({
         title: "Success",
-        description: "Push notifications disabled",
+        description: "Push notifications disabled successfully",
       });
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to disable notifications",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Failed to disable notifications",
         variant: "destructive",
       });
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleMarkAsRead = (id: string) => {
     setNotifications((prev) =>
-      prev.map((notif) =>
-        notif.id === id ? { ...notif, read: true } : notif
-      )
+      prev.map((notif) => (notif.id === id ? { ...notif, read: true } : notif))
     );
   };
 

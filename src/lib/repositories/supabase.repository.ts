@@ -85,6 +85,7 @@ export class SupabasePostRepository implements IPostRepository {
         )
       `
       )
+      .eq("status", "approved")
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -159,6 +160,7 @@ export class SupabasePostRepository implements IPostRepository {
       `
       )
       .eq("community_id", communityId)
+      .eq("status", "approved")
       .order("created_at", { ascending: false });
 
     if (error) {

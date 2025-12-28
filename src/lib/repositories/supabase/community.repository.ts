@@ -267,11 +267,12 @@ export class SupabaseCommunityRepository implements ICommunityRepository {
   ): Promise<PaginatedCommunities> {
     const offset = (page - 1) * limit;
 
-    // Get all community IDs where user is a member (any role)
+    // Get all community IDs where user is a member (approved only, not pending)
     const { data: memberData, error: memberError } = await this.supabase
       .from("CommunityMember")
       .select("community_id")
-      .eq("user_account_id", userId);
+      .eq("user_account_id", userId)
+      .eq("status", "approved");
 
     if (memberError) {
       throw new Error(

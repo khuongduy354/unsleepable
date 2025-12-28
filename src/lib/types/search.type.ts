@@ -9,6 +9,7 @@ export interface SearchPostsDTO {
   query: string;
   tagFilters?: TagFilter[]; // Multiple tag groups with different operators
   communityId?: string;
+  userId?: string; // For validating community access
   limit?: number;
   offset?: number;
 }
@@ -18,6 +19,7 @@ export interface PostSearchResult {
   title: string;
   content: string;
   user_id: string;
+  username?: string;
   community_id: string;
   created_at: string;
   updated_at: string;

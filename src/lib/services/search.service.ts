@@ -10,9 +10,9 @@ export class SearchService implements ISearchService {
 
   async searchPosts(params: SearchPostsDTO): Promise<PostSearchResult[]> {
     // Validate query
-    if (!params.query || params.query.trim().length === 0) {
-      throw new Error("Search query cannot be empty");
-    }
+    // if (!params.query || params.query.trim().length === 0) {
+    //   throw new Error("Search query cannot be empty");
+    // }
 
     // Validate tag filters if provided
     if (params.tagFilters) {
@@ -20,7 +20,7 @@ export class SearchService implements ISearchService {
         if (!filter.tags || filter.tags.length === 0) {
           throw new Error("Tag filter must contain at least one tag");
         }
-        if (!['AND', 'OR', 'NOT'].includes(filter.operator)) {
+        if (!["AND", "OR", "NOT"].includes(filter.operator)) {
           throw new Error("Tag operator must be AND, OR, or NOT");
         }
       }

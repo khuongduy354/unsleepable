@@ -11,7 +11,10 @@ export const searchApi = {
     notTags?: string;
     communityId?: string;
   }): Promise<PostSearchResult[]> {
-    const searchParams = new URLSearchParams({ q: params.query });
+    const searchParams = new URLSearchParams();
+
+    // Always include query parameter (even if empty)
+    searchParams.append("q", params.query || "");
 
     if (params.orTags?.trim()) {
       searchParams.append("orTags", params.orTags);

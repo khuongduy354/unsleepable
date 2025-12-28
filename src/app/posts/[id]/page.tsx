@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { postApi, commentApi } from "@/lib/api";
+import { postApi, commentApi, reportApi } from "@/lib/api";
 import AppLayout from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
 import {
@@ -25,6 +25,8 @@ import {
   Edit,
   Trash2,
   Sparkles,
+  Flag,
+  Reply,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useUser } from "@/contexts/UserContext";
@@ -57,6 +59,7 @@ interface Comment {
   updated_at: string | null;
   author_email?: string;
   author_name?: string;
+  replies?: Comment[];
 }
 
 export default function PostDetailPage() {
@@ -73,6 +76,14 @@ export default function PostDetailPage() {
   const [submittingComment, setSubmittingComment] = useState(false);
   const [summarizing, setSummarizing] = useState(false);
   const [showSummary, setShowSummary] = useState(false);
+  const [replyingTo, setReplyingTo] = useState<string | null>(null);
+  const [replyContent, setReplyContent] = useState("");
+  const [reportingComment, setReportingComment] = useState<string | null>(null);
+  const [reportReason, setReportReason] = useState("");
+  const [loadingReplies, setLoadingReplies] = useState<Record<string, boolean>>(
+    {}
+  );
+  const [showReplies, setShowReplies] = useState<Record<string, boolean>>({});
 
   // Helper function to render content with markdown images
   const renderContent = (content: string) => {
@@ -143,9 +154,44 @@ export default function PostDetailPage() {
   const fetchComments = async () => {
     try {
       const data = await commentApi.getByPost(postId);
-      setComments(data.comments || []);
+      // Filter to get only top-level comments (no parent)
+      const topLevelComments = (data.comments || []).filter(
+        (comment: Comment) => !comment.parent_comment_id
+      );
+      setComments(topLevelComments);
     } catch (error) {
       console.error("Failed to load comments:", error);
+    }
+  };
+
+  const loadReplies = async (commentId: string) => {
+    if (showReplies[commentId]) {
+      // Toggle off
+      setShowReplies({ ...showReplies, [commentId]: false });
+      return;
+    }
+
+    setLoadingReplies({ ...loadingReplies, [commentId]: true });
+    try {
+      const replies = await commentApi.getReplies(commentId);
+
+      // Update the comment with its replies
+      setComments((prevComments) =>
+        prevComments.map((comment) =>
+          comment.id === commentId ? { ...comment, replies } : comment
+        )
+      );
+
+      setShowReplies({ ...showReplies, [commentId]: true });
+    } catch (error) {
+      console.error("Failed to load replies:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load replies",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingReplies({ ...loadingReplies, [commentId]: false });
     }
   };
 
@@ -305,6 +351,96 @@ export default function PostDetailPage() {
       });
     } finally {
       setSummarizing(false);
+    }
+  };
+
+  const handleReportComment = async (commentId: string) => {
+    if (!userId) {
+      toast({
+        title: "Error",
+        description: "Please login to report comments",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!reportReason.trim()) {
+      toast({
+        title: "Error",
+        description: "Please provide a reason for reporting",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      await reportApi.create(
+        {
+          reportedEntityId: commentId,
+          reportedEntityType: "comment",
+          reason: reportReason,
+        },
+        userId
+      );
+
+      toast({
+        title: "Success",
+        description: "Comment reported successfully",
+      });
+      setReportingComment(null);
+      setReportReason("");
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to report comment",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleReplyToComment = async (parentCommentId: string) => {
+    if (!userId) {
+      toast({
+        title: "Error",
+        description: "Please login to reply to comments",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!replyContent.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a reply",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setSubmittingComment(true);
+    try {
+      await commentApi.create({
+        content: replyContent,
+        user_id: userId,
+        post_id: postId,
+        parent_comment_id: parentCommentId,
+      });
+
+      toast({
+        title: "Success",
+        description: "Reply posted successfully",
+      });
+      setReplyContent("");
+      setReplyingTo(null);
+      await fetchComments();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to post reply",
+        variant: "destructive",
+      });
+    } finally {
+      setSubmittingComment(false);
     }
   };
 
@@ -526,6 +662,169 @@ export default function PostDetailPage() {
                           </span>
                         </div>
                         <p className="mt-2 text-sm">{comment.content}</p>
+
+                        {/* Comment Actions */}
+                        <div className="flex items-center gap-2 mt-3">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() =>
+                              setReplyingTo(
+                                replyingTo === comment.id ? null : comment.id
+                              )
+                            }
+                          >
+                            <Reply className="h-3 w-3 mr-1" />
+                            Reply
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() =>
+                              setReportingComment(
+                                reportingComment === comment.id
+                                  ? null
+                                  : comment.id
+                              )
+                            }
+                          >
+                            <Flag className="h-3 w-3 mr-1" />
+                            Report
+                          </Button>
+                        </div>
+
+                        {/* Reply Form */}
+                        {replyingTo === comment.id && (
+                          <div className="mt-3 space-y-2">
+                            <Textarea
+                              placeholder="Write your reply..."
+                              value={replyContent}
+                              onChange={(e) => setReplyContent(e.target.value)}
+                              rows={2}
+                              className="text-sm"
+                            />
+                            <div className="flex gap-2">
+                              <Button
+                                size="sm"
+                                onClick={() => handleReplyToComment(comment.id)}
+                                disabled={
+                                  submittingComment || !replyContent.trim()
+                                }
+                              >
+                                {submittingComment && (
+                                  <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                                )}
+                                Post Reply
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => {
+                                  setReplyingTo(null);
+                                  setReplyContent("");
+                                }}
+                              >
+                                Cancel
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Report Form */}
+                        {reportingComment === comment.id && (
+                          <div className="mt-3 space-y-2">
+                            <Textarea
+                              placeholder="Why are you reporting this comment? (required)"
+                              value={reportReason}
+                              onChange={(e) => setReportReason(e.target.value)}
+                              rows={2}
+                              className="text-sm"
+                            />
+                            <div className="flex gap-2">
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => handleReportComment(comment.id)}
+                                disabled={!reportReason.trim()}
+                              >
+                                <Flag className="mr-2 h-3 w-3" />
+                                Submit Report
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => {
+                                  setReportingComment(null);
+                                  setReportReason("");
+                                }}
+                              >
+                                Cancel
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Load Replies Button */}
+                        <div className="mt-3">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => loadReplies(comment.id)}
+                            disabled={loadingReplies[comment.id]}
+                          >
+                            {loadingReplies[comment.id] ? (
+                              <>
+                                <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                                Loading replies...
+                              </>
+                            ) : showReplies[comment.id] ? (
+                              <>Hide replies</>
+                            ) : (
+                              <>View replies</>
+                            )}
+                          </Button>
+                        </div>
+
+                        {/* Replies Section */}
+                        {showReplies[comment.id] && comment.replies && (
+                          <div className="mt-4 ml-8 space-y-3 border-l-2 border-gray-200 pl-4">
+                            {comment.replies.map((reply) => (
+                              <div
+                                key={reply.id}
+                                className="flex items-start gap-3"
+                              >
+                                <Avatar className="h-8 w-8">
+                                  <AvatarFallback className="text-xs">
+                                    {(
+                                      reply.author_name ||
+                                      reply.author_email ||
+                                      reply.user_id
+                                    )
+                                      .substring(0, 2)
+                                      .toUpperCase()}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-semibold text-sm">
+                                      {reply.author_name ||
+                                        reply.author_email?.split("@")[0] ||
+                                        `User ${reply.user_id.substring(0, 8)}`}
+                                    </span>
+                                    <span className="text-xs text-muted-foreground">
+                                      {new Date(
+                                        reply.created_at
+                                      ).toLocaleDateString()}
+                                    </span>
+                                  </div>
+                                  <p className="mt-1 text-sm">
+                                    {reply.content}
+                                  </p>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </CardHeader>
