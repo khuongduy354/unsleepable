@@ -6,7 +6,7 @@ export class SupabaseUserRepository implements IUserRepository {
 
   async getById(userId: string): Promise<User | null> {
     const { data, error } = await this.supabase
-      .from("User")
+      .from("UserAccount")
       .select("id, email, username, created_at, status")
       .eq("id", userId)
       .single();
@@ -24,7 +24,7 @@ export class SupabaseUserRepository implements IUserRepository {
 
   async getByUsername(username: string): Promise<User | null> {
     const { data, error } = await this.supabase
-      .from("User")
+      .from("UserAccount")
       .select("id, email, username, created_at, status")
       .eq("username", username)
       .single();
@@ -41,7 +41,7 @@ export class SupabaseUserRepository implements IUserRepository {
 
   async getByEmail(email: string): Promise<User | null> {
     const { data, error } = await this.supabase
-      .from("User")
+      .from("UserAccount")
       .select("id, email, username, created_at, status")
       .eq("email", email)
       .single();
@@ -68,7 +68,7 @@ export class SupabaseUserRepository implements IUserRepository {
     }
 
     const { data: user, error } = await this.supabase
-      .from("User")
+      .from("UserAccount")
       .update(updateData)
       .eq("id", userId)
       .select("id, email, username, created_at, status")
@@ -83,7 +83,7 @@ export class SupabaseUserRepository implements IUserRepository {
 
   async updateStatus(userId: string, status: string): Promise<User> {
     const { data: user, error } = await this.supabase
-      .from("User")
+      .from("UserAccount")
       .update({ status })
       .eq("id", userId)
       .select("id, email, username, created_at, status")
