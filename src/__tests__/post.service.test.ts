@@ -91,6 +91,7 @@ describe("PostService", () => {
         community_id: "community-1",
         title: "Existing Post",
         content: "Some content",
+        status: "approved",
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
