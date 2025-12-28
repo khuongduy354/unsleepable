@@ -54,7 +54,19 @@ export class PostService implements IPostService {
       throw new Error(`Failed to fetch pending posts: ${error.message}`);
     }
 
-    return posts || [];
+    // Map posts to include author info and community name
+    return (posts || []).map((post) => {
+      const author = post.author as any;
+      const community = post.community as any;
+      return {
+        ...post,
+        author: undefined,
+        author_email: author?.email,
+        author_name: author?.username || author?.email?.split("@")[0],
+        community_name: community?.name,
+        community: undefined,
+      } as Post;
+    });
   }
 
   // Fetch pending posts for communities owned by admin
@@ -164,7 +176,14 @@ export class PostService implements IPostService {
   // }
 
   async getPostById(id: string): Promise<Post | null> {
-    return await this.postRepository.findById(id);
+    const post = await this.postRepository.findById(id);
+
+    // Only return approved posts for public access
+    if (post && post.status !== "approved") {
+      return null;
+    }
+
+    return post;
   }
 
   async getPosts(filters?: PostFilters): Promise<Post[]> {

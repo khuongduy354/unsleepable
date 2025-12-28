@@ -48,7 +48,6 @@ export class SupabasePostRepository implements IPostRepository {
       `
       )
       .eq("id", id)
-      .eq("status", "approved")
       .single();
 
     if (error) {
