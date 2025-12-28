@@ -9,4 +9,6 @@ module.exports = {
   },
   // Only run server-side tests
   testPathIgnorePatterns: ["/node_modules/", "/.next/"],
+  // Load environment variables from .env.local
+  setupFiles: ["<rootDir>/src/__tests__/setup-env.ts"],
 };
