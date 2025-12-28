@@ -21,6 +21,8 @@ interface Post {
   dislikes_count: number;
   comments_count: number;
   engagement_score: number | null;
+  author_email?: string;
+  author_name?: string;
 }
 
 export default function PostsPage() {

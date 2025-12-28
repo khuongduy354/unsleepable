@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode, useState, useEffect } from "react";
+import { ReactNode, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
@@ -25,6 +25,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { createClient } from "@/utils/supabase/client";
+import { useUser } from "@/contexts/UserContext";
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -34,37 +35,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const router = useRouter();
   const pathname = usePathname();
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [username, setUsername] = useState("User");
-  const [userId, setUserId] = useState<string | null>(null);
-
-  useEffect(() => {
-    checkAuth();
-  }, []);
-
-  const checkAuth = async () => {
-    const supabase = createClient();
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-
-    if (session?.user) {
-      setIsLoggedIn(true);
-      setUsername(session.user.email?.split("@")[0] || "User");
-      setUserId(session.user.id);
-      // Store in localStorage for backwards compatibility
-      localStorage.setItem("isLoggedIn", "true");
-      localStorage.setItem(
-        "username",
-        session.user.email?.split("@")[0] || "User"
-      );
-      localStorage.setItem("userId", session.user.id);
-    } else {
-      setIsLoggedIn(false);
-      setUsername("User");
-      setUserId(null);
-    }
-  };
+  const { isLoggedIn, username, refreshUser } = useUser();
 
   const handleLogout = async () => {
     const supabase = createClient();
@@ -74,7 +45,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
     localStorage.removeItem("username");
     localStorage.removeItem("userId");
     setShowLogoutDialog(false);
-    setIsLoggedIn(false);
+    await refreshUser();
     router.push("/auth/login");
   };
 

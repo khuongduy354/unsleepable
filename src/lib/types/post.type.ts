@@ -2,10 +2,10 @@
 export interface CreatePostDTO {
   title: string;
   content: string;
-    author_id: string;
-    media_url: string;
-    media_type: "media" | "video";
-    storage_path: string;
+  author_id: string;
+  media_url: string;
+  media_type: "media" | "video";
+  storage_path: string;
 }
 
 export interface UpdatePostDTO {
@@ -30,6 +30,8 @@ export interface Post {
   created_at: string;
   updated_at: string;
   status: "approved" | "pending" | "rejected";
+  author_email?: string;
+  author_name?: string;
 }
 
 // Comment DTOs and interfaces
@@ -53,6 +55,8 @@ export interface Comment {
   parent_comment_id: string | null;
   created_at: string;
   updated_at: string;
+  author_email?: string;
+  author_name?: string;
 }
 
 export interface IPostRepository {
@@ -63,7 +67,7 @@ export interface IPostRepository {
   findByCommunityId(communityId: string): Promise<Post[]>;
   update(id: string, data: UpdatePostDTO): Promise<Post>;
   delete(id: string): Promise<void>;
-  
+
   // Comment methods
   createComment(data: CreateCommentDTO): Promise<Comment>;
   findCommentById(id: string): Promise<Comment | null>;
@@ -81,7 +85,7 @@ export interface IPostService {
   getPostsByCommunity(communityId: string): Promise<Post[]>;
   updatePost(id: string, data: UpdatePostDTO): Promise<Post>;
   deletePost(id: string): Promise<void>;
-  
+
   // Comment methods
   createComment(data: CreateCommentDTO): Promise<Comment>;
   getCommentById(id: string): Promise<Comment | null>;

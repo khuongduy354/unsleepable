@@ -27,6 +27,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useUser } from "@/contexts/UserContext";
 
 interface Post {
   id: string;
@@ -41,6 +42,8 @@ interface Post {
   comments_count: number;
   engagement_score: number | null;
   summary?: string | null;
+  author_email?: string;
+  author_name?: string;
 }
 
 interface Comment {
@@ -51,6 +54,8 @@ interface Comment {
   parent_comment_id: string | null;
   created_at: string;
   updated_at: string | null;
+  author_email?: string;
+  author_name?: string;
 }
 
 export default function PostDetailPage() {
@@ -58,6 +63,7 @@ export default function PostDetailPage() {
   const params = useParams();
   const postId = params?.id as string;
   const { toast } = useToast();
+  const { userId } = useUser();
 
   const [post, setPost] = useState<Post | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
@@ -66,9 +72,6 @@ export default function PostDetailPage() {
   const [submittingComment, setSubmittingComment] = useState(false);
   const [summarizing, setSummarizing] = useState(false);
   const [showSummary, setShowSummary] = useState(false);
-
-  // Mock user ID for testing
-  const [userId] = useState("d2f1d6c0-47b4-4e3d-9ce4-5cb9033e1234");
 
   useEffect(() => {
     if (postId) {
@@ -106,6 +109,15 @@ export default function PostDetailPage() {
     e.preventDefault();
     if (!commentContent.trim()) return;
 
+    if (!userId) {
+      toast({
+        title: "Error",
+        description: "Please login to comment",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setSubmittingComment(true);
     try {
       await commentApi.create({
@@ -136,6 +148,14 @@ export default function PostDetailPage() {
   };
 
   const handleLike = async () => {
+    if (!userId) {
+      toast({
+        title: "Error",
+        description: "Please login to like posts",
+        variant: "destructive",
+      });
+      return;
+    }
     try {
       await postApi.react(postId, userId, "like");
       await fetchPost();
@@ -153,6 +173,14 @@ export default function PostDetailPage() {
   };
 
   const handleDislike = async () => {
+    if (!userId) {
+      toast({
+        title: "Error",
+        description: "Please login to dislike posts",
+        variant: "destructive",
+      });
+      return;
+    }
     try {
       await postApi.react(postId, userId, "dislike");
       await fetchPost();
@@ -170,6 +198,14 @@ export default function PostDetailPage() {
   };
 
   const handleDelete = async () => {
+    if (!userId) {
+      toast({
+        title: "Error",
+        description: "Please login to delete posts",
+        variant: "destructive",
+      });
+      return;
+    }
     if (!confirm("Are you sure you want to delete this post?")) return;
 
     try {
@@ -278,7 +314,11 @@ export default function PostDetailPage() {
               <div className="flex-1">
                 <CardTitle className="text-3xl mb-2">{post.title}</CardTitle>
                 <CardDescription>
-                  Posted {new Date(post.created_at).toLocaleDateString()} at{" "}
+                  By{" "}
+                  {post.author_name ||
+                    post.author_email?.split("@")[0] ||
+                    `User ${post.user_id.substring(0, 8)}`}{" "}
+                  • Posted {new Date(post.created_at).toLocaleDateString()} at{" "}
                   {new Date(post.created_at).toLocaleTimeString()}
                 </CardDescription>
               </div>
@@ -408,12 +448,22 @@ export default function PostDetailPage() {
                   <CardHeader>
                     <div className="flex items-start gap-3">
                       <Avatar>
-                        <AvatarFallback>U</AvatarFallback>
+                        <AvatarFallback>
+                          {(
+                            comment.author_name ||
+                            comment.author_email ||
+                            comment.user_id
+                          )
+                            .substring(0, 2)
+                            .toUpperCase()}
+                        </AvatarFallback>
                       </Avatar>
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
                           <span className="font-semibold">
-                            User {comment.user_id.substring(0, 8)}
+                            {comment.author_name ||
+                              comment.author_email?.split("@")[0] ||
+                              `User ${comment.user_id.substring(0, 8)}`}
                           </span>
                           <span className="text-sm text-muted-foreground">
                             {new Date(comment.created_at).toLocaleDateString()}

@@ -1,7 +1,6 @@
 "use client";
 
 import { Post } from "@/lib/types/post.type";
-import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { postApi } from "@/lib/api";
 import { Button } from "@/components/ui/button";
@@ -14,6 +13,7 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { MessageSquare, ThumbsUp, ThumbsDown, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useUser } from "@/contexts/UserContext";
 
 interface PostListProps {
   posts: Post[];
@@ -22,10 +22,19 @@ interface PostListProps {
 export default function PostList({ posts }: PostListProps) {
   const router = useRouter();
   const { toast } = useToast();
-  const [userId] = useState("d2f1d6c0-47b4-4e3d-9ce4-5cb9033e1234");
+  const { userId } = useUser();
 
   const handleDeletePost = async (postId: string, e: React.MouseEvent) => {
     e.stopPropagation();
+
+    if (!userId) {
+      toast({
+        title: "Error",
+        description: "Please login to delete posts",
+        variant: "destructive",
+      });
+      return;
+    }
 
     if (!confirm("Are you sure you want to delete this post?")) return;
 
@@ -48,6 +57,14 @@ export default function PostList({ posts }: PostListProps) {
 
   const handleLike = async (postId: string, e: React.MouseEvent) => {
     e.stopPropagation();
+    if (!userId) {
+      toast({
+        title: "Error",
+        description: "Please login to like posts",
+        variant: "destructive",
+      });
+      return;
+    }
     try {
       await postApi.react(postId, userId, "like");
       window.location.reload();
@@ -66,6 +83,14 @@ export default function PostList({ posts }: PostListProps) {
 
   const handleDislike = async (postId: string, e: React.MouseEvent) => {
     e.stopPropagation();
+    if (!userId) {
+      toast({
+        title: "Error",
+        description: "Please login to dislike posts",
+        variant: "destructive",
+      });
+      return;
+    }
     try {
       await postApi.react(postId, userId, "dislike");
       window.location.reload();
@@ -98,13 +123,17 @@ export default function PostList({ posts }: PostListProps) {
               <div className="flex items-center gap-3">
                 <Avatar>
                   <AvatarFallback>
-                    {post.user_id.substring(0, 2).toUpperCase()}
+                    {(post.author_name || post.author_email || post.user_id)
+                      .substring(0, 2)
+                      .toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
                     <span className="font-semibold">
-                      User {post.user_id.substring(0, 8)}
+                      {post.author_name ||
+                        post.author_email?.split("@")[0] ||
+                        `User ${post.user_id.substring(0, 8)}`}
                     </span>
                   </div>
                   <span className="text-xs text-muted-foreground">

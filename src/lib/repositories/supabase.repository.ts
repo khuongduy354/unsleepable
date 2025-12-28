@@ -39,7 +39,15 @@ export class SupabasePostRepository implements IPostRepository {
   async findById(id: string): Promise<Post | null> {
     const { data: post, error } = await this.supabase
       .from("Post")
-      .select("*")
+      .select(
+        `
+        *,
+        author:UserAccount!Post_user_id_fkey (
+          username,
+          email
+        )
+      `
+      )
       .eq("id", id)
       .single();
 
@@ -50,26 +58,58 @@ export class SupabasePostRepository implements IPostRepository {
       throw new Error(`Failed to find post: ${error.message}`);
     }
 
-    return post;
+    // Extract author info
+    const author = post.author as any;
+    return {
+      ...post,
+      author: undefined,
+      author_email: author?.email,
+      author_name: author?.username || author?.email?.split("@")[0],
+    } as Post;
   }
 
   async findAll(): Promise<Post[]> {
     const { data: posts, error } = await this.supabase
       .from("Post")
-      .select("*")
+      .select(
+        `
+        *,
+        author:UserAccount!Post_user_id_fkey (
+          username,
+          email
+        )
+      `
+      )
       .order("created_at", { ascending: false });
 
     if (error) {
       throw new Error(`Failed to fetch posts: ${error.message}`);
     }
 
-    return posts || [];
+    // Map posts to include author info
+    return (posts || []).map((post) => {
+      const author = post.author as any;
+      return {
+        ...post,
+        author: undefined,
+        author_email: author?.email,
+        author_name: author?.username || author?.email?.split("@")[0],
+      } as Post;
+    });
   }
 
   async findByUserId(userId: string): Promise<Post[]> {
     const { data: posts, error } = await this.supabase
       .from("Post")
-      .select("*")
+      .select(
+        `
+        *,
+        author:UserAccount!Post_user_id_fkey (
+          username,
+          email
+        )
+      `
+      )
       .eq("user_id", userId)
       .order("created_at", { ascending: false });
 
@@ -77,7 +117,16 @@ export class SupabasePostRepository implements IPostRepository {
       throw new Error(`Failed to fetch posts by user: ${error.message}`);
     }
 
-    return posts || [];
+    // Map posts to include author info
+    return (posts || []).map((post) => {
+      const author = post.author as any;
+      return {
+        ...post,
+        author: undefined,
+        author_email: author?.email,
+        author_name: author?.username || author?.email?.split("@")[0],
+      } as Post;
+    });
   }
 
   async findByCommunityId(communityId: string): Promise<Post[]> {
@@ -113,10 +162,7 @@ export class SupabasePostRepository implements IPostRepository {
   }
 
   async delete(id: string): Promise<void> {
-    const { error } = await this.supabase
-      .from("Post")
-      .delete()
-      .eq("id", id);
+    const { error } = await this.supabase.from("Post").delete().eq("id", id);
 
     if (error) {
       throw new Error(`Failed to delete post: ${error.message}`);
@@ -163,7 +209,15 @@ export class SupabasePostRepository implements IPostRepository {
   async findCommentsByPostId(postId: string): Promise<Comment[]> {
     const { data: comments, error } = await this.supabase
       .from("Comments")
-      .select("*")
+      .select(
+        `
+        *,
+        author:UserAccount!Comments_user_id_fkey (
+          username,
+          email
+        )
+      `
+      )
       .eq("post_id", postId)
       .is("parent_comment_id", null)
       .order("created_at", { ascending: false });
@@ -172,7 +226,16 @@ export class SupabasePostRepository implements IPostRepository {
       throw new Error(`Failed to fetch comments: ${error.message}`);
     }
 
-    return comments || [];
+    // Map comments to include author info
+    return (comments || []).map((comment) => {
+      const author = comment.author as any;
+      return {
+        ...comment,
+        author: undefined,
+        author_email: author?.email,
+        author_name: author?.username || author?.email?.split("@")[0],
+      } as Comment;
+    });
   }
 
   async findRepliesByCommentId(commentId: string): Promise<Comment[]> {
