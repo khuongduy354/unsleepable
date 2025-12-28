@@ -26,6 +26,59 @@ export class PostService implements IPostService {
     return await this.postRepository.create(data);
   }
 
+  // Fetch posts with 'pending' status
+  async getPendingPosts(filters?: PostFilters): Promise<Post[]> {
+    // Fetch posts with status 'pending'
+    const allPosts = await this.getPosts(filters);
+    return allPosts.filter(post => post.status === "pending");
+  }
+
+  // Approve posts
+  async approvePost(id: string): Promise<Post> {
+    const post = await this.postRepository.findById(id);
+    if (!post) {
+      throw new Error("Post not found");
+    }
+    post.status = "approved";
+    return await this.postRepository.update(id, { status: "approved" });
+  }
+  // Reject posts
+  async rejectPost(id: string): Promise<Post> {
+    const post = await this.postRepository.findById(id);
+    if (!post) {
+      throw new Error("Post not found");
+    }
+    post.status = "rejected";
+    return await this.postRepository.update(id, { status: "rejected" });
+  }
+
+  // // get reported posts
+  // async getReportedPosts(filters?: PostFilters ): Promise<Post[]> {
+  //   // Fetch posts with status_reported 'pending'
+  //   const allPosts = await this.getPosts(filters);
+  //   return allPosts.filter(post => post['status_reported'] === "pending");
+  // }
+
+  // // dismiss reported post
+  // async dissmissPostReport(id: string): Promise<Post> {
+  //   const post = await this.postRepository.findById(id);
+  //   if (!post) {
+  //     throw new Error("Post not found");
+  //   }
+  //   post['status_reported'] = "dismissed";
+  //   return await this.postRepository.update(id, { status_reported: "dismissed" });
+  // }
+
+  // // review reported post
+  // async reviewPostReport(id: string): Promise<Post> {
+  //   const post = await this.postRepository.findById(id);
+  //   if (!post) {
+  //     throw new Error("Post not found");
+  //   }
+  //   post['status_reported'] = "reviewed";
+  //   return await this.postRepository.update(id, { status_reported: "reviewed" });
+  // }
+
   async getPostById(id: string): Promise<Post | null> {
     return await this.postRepository.findById(id);
   }

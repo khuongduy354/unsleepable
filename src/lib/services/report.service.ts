@@ -4,10 +4,8 @@ import { CreateReportData, Report, ReportEntityType, IReportRepository } from "@
 
 export interface IReportService {
     createReport(data: CreateReportData, reporterId: string): Promise<Report>;
-
-    // Các hàm xử lý Admin sẽ thêm sau:
-    // getPendingReports(): Promise<Report[]>;
-    // handleReportDecision(reportId: string, decision: 'APPROVE' | 'REJECT', adminId: string): Promise<void>;
+    getPendingReports(): Promise<Report[]>;
+    handleReportDecision(reportId: string, decision: 'APPROVE' | 'REJECT', adminId: string): Promise<void>;
 }
 
 
@@ -37,5 +35,46 @@ export class ReportService implements IReportService {
         const newReport = await this.reportRepository.save(data, reporterId);
 
         return newReport;
+    }
+
+    async getPendingReports(): Promise<Report[]> {
+        // Fetch reports with PENDING status from repository
+        const pendingReports = await this.reportRepository.findPendingReports();
+        return pendingReports;
+    }
+
+    async handleReportDecision(reportId: string, decision: 'APPROVE' | 'REJECT', adminId: string): Promise<void> {
+        // Validate decision
+        const validDecisions = ['APPROVE', 'REJECT'];
+        if (!validDecisions.includes(decision)) {
+            throw new Error("Invalid decision. Must be 'APPROVE' or 'REJECT'.");
+        }
+
+        // Fetch report details
+        const report = await this.reportRepository.getReportById(reportId);
+        if (!report) {
+            throw new Error("Report not found.");
+        }
+
+        // Update report status
+        const newStatus: 'RESOLVED' | 'REJECTED' = decision === 'APPROVE' ? 'RESOLVED' : 'REJECTED';
+        await this.reportRepository.updateReportStatus(reportId, newStatus);
+
+        // If APPROVE, delete the reported entity (post or comment)
+        if (decision === 'APPROVE') {
+            try {
+                if (report.reported_post_id) {
+                    // Delete the reported post
+                    await this.reportRepository.deletePost(report.reported_post_id);
+                } else if (report.reported_comment_id) {
+                    // Delete the reported comment
+                    await this.reportRepository.deleteComment(report.reported_comment_id);
+                }
+            } catch (error) {
+                // Log error but don't fail the entire operation
+                console.error(`Failed to delete reported entity: ${error}`);
+                throw new Error(`Report approved but failed to delete entity: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            }
+        }
     }
 }
