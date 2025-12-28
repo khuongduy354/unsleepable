@@ -9,6 +9,7 @@ export async function GET(req: NextRequest) {
     const communityId = searchParams.get("communityId");
     const limit = searchParams.get("limit");
     const offset = searchParams.get("offset");
+    const sortBy = searchParams.get("sortBy") as "relevance" | "time" | null;
 
     // Tag filters: orTags, andTags, notTags (comma-separated)
     const orTags = searchParams.get("orTags");
@@ -64,6 +65,7 @@ export async function GET(req: NextRequest) {
       userId: userId || undefined,
       limit: limit ? parseInt(limit) : undefined,
       offset: offset ? parseInt(offset) : undefined,
+      sortBy: sortBy || "relevance",
     });
 
     return NextResponse.json(results);

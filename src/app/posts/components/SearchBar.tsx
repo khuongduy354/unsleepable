@@ -18,9 +18,21 @@ interface Tag {
 }
 
 interface SearchBarProps {
-  onSearchResults: (results: PostSearchResult[]) => void;
+  onSearchResults: (
+    results: PostSearchResult[],
+    hasMore: boolean,
+    searchParams?: {
+      query: string;
+      orTags?: string;
+      andTags?: string;
+      notTags?: string;
+      communityId?: string;
+      sortBy: "relevance" | "time";
+    }
+  ) => void;
   onSearchClear: () => void;
   communityId?: string;
+  onLoadMore?: () => void;
 }
 
 export default function SearchBar({
@@ -37,6 +49,7 @@ export default function SearchBar({
   const [selectedCommunityId, setSelectedCommunityId] = useState<string>("");
   const [communities, setCommunities] = useState<Community[]>([]);
   const [loadingCommunities, setLoadingCommunities] = useState(false);
+  const [sortBy, setSortBy] = useState<"relevance" | "time">("relevance");
 
   // Tag suggestions state
   const [availableTags, setAvailableTags] = useState<Tag[]>([]);
@@ -181,7 +194,8 @@ export default function SearchBar({
       orTagsStr: string,
       andTagsStr: string,
       notTagsStr: string,
-      commId: string
+      commId: string,
+      sort: "relevance" | "time" = "relevance"
     ) => {
       // if (!query.trim()) {
       //   onSearchClear();
@@ -190,14 +204,27 @@ export default function SearchBar({
 
       setIsSearching(true);
       try {
+        const PAGE_SIZE = 20;
+        const effectiveCommunityId = commId || communityId;
         const results = await searchApi.searchPosts({
           query,
           orTags: orTagsStr,
           andTags: andTagsStr,
           notTags: notTagsStr,
-          communityId: commId || communityId,
+          communityId: effectiveCommunityId,
+          limit: PAGE_SIZE,
+          offset: 0,
+          sortBy: sort,
         });
-        onSearchResults(results);
+        const hasMore = results.length === PAGE_SIZE;
+        onSearchResults(results, hasMore, {
+          query,
+          orTags: orTagsStr || undefined,
+          andTags: andTagsStr || undefined,
+          notTags: notTagsStr || undefined,
+          communityId: effectiveCommunityId || undefined,
+          sortBy: sort,
+        });
       } catch (error) {
         console.error("Search error:", error);
       } finally {
@@ -210,7 +237,14 @@ export default function SearchBar({
   // Debounce effect
   useEffect(() => {
     const timeoutId = setTimeout(() => {
-      performSearch(searchQuery, orTags, andTags, notTags, selectedCommunityId);
+      performSearch(
+        searchQuery,
+        orTags,
+        andTags,
+        notTags,
+        selectedCommunityId,
+        sortBy
+      );
     }, 500);
 
     return () => clearTimeout(timeoutId);
@@ -220,6 +254,7 @@ export default function SearchBar({
     andTags,
     notTags,
     selectedCommunityId,
+    sortBy,
     performSearch,
   ]);
 
@@ -229,13 +264,21 @@ export default function SearchBar({
     setAndTags("");
     setNotTags("");
     setSelectedCommunityId("");
+    setSortBy("relevance");
     onSearchClear();
   };
 
   // Manual search trigger
   const handleManualSearch = () => {
     console.log("Manual search triggered");
-    performSearch(searchQuery, orTags, andTags, notTags, selectedCommunityId);
+    performSearch(
+      searchQuery,
+      orTags,
+      andTags,
+      notTags,
+      selectedCommunityId,
+      sortBy
+    );
   };
 
   // Handle Enter key press
@@ -275,6 +318,33 @@ export default function SearchBar({
           Search
         </button>
       </div>
+
+      {/* Sort by selector */}
+      {/* <div className="flex items-center gap-2"> */}
+      {/* <label className="text-sm font-medium text-gray-700">Sort by:</label>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setSortBy("relevance")}
+            className={`px-3 py-1 text-sm rounded-lg border transition-colors ${
+              sortBy === "relevance"
+                ? "bg-blue-600 text-white border-blue-600"
+                : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+            }`}
+          >
+            Relevance
+          </button>
+          <button
+            onClick={() => setSortBy("time")}
+            className={`px-3 py-1 text-sm rounded-lg border transition-colors ${
+              sortBy === "time"
+                ? "bg-blue-600 text-white border-blue-600"
+                : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+            }`}
+          >
+            Newest First
+          </button>
+        </div>
+      </div> */}
 
       {/* Community filter dropdown */}
       <div className="flex items-center gap-2">
