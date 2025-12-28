@@ -8,14 +8,14 @@ import { createClient } from "@/utils/supabase/server";
  */
 export async function POST(request: NextRequest) {
   try {
-    // const supabase = await createClient();
-    // const {
-    //   data: { user },
-    // } = await supabase.auth.getUser();
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-    // if (!user) {
-    //   return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    // }
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
     const body = await request.json();
     const { subscription } = body;
@@ -28,15 +28,12 @@ export async function POST(request: NextRequest) {
     }
 
     const notificationService = await service.getNotificationService();
-    await notificationService.subscribe("390ecb0f-ac31-41d4-8bd4-34478febaa30", subscription);
+    await notificationService.subscribe(user.id, subscription);
 
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Error subscribing to notifications:", error);
-    return NextResponse.json(
-      { error: "Failed to subscribe" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to subscribe" }, { status: 500 });
   }
 }
 
@@ -46,17 +43,17 @@ export async function POST(request: NextRequest) {
  */
 export async function DELETE() {
   try {
-    // const supabase = await createClient();
-    // const {
-    //   data: { user },
-    // } = await supabase.auth.getUser();
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-    // if (!user) {
-    //   return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    // }
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
     const notificationService = await service.getNotificationService();
-    await notificationService.unsubscribe("390ecb0f-ac31-41d4-8bd4-34478febaa30");
+    await notificationService.unsubscribe(user.id);
 
     return NextResponse.json({ success: true });
   } catch (error) {

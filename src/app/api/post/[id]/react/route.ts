@@ -27,7 +27,28 @@ export async function POST(
     }
 
     const postService = await service.getPostService();
+
+    // Get post to find author before reacting
+    const post = await postService.getPostById(postId);
+
     await postService.reactToPost(postId, userId, type);
+
+    // Send notification to post author (if not self-reacting)
+    if (post && post.user_id && post.user_id !== userId) {
+      try {
+        const notificationService = await service.getNotificationService();
+        await notificationService.sendToUser(post.user_id, {
+          title: type === "like" ? "New Like!" : "New Dislike",
+          body: `Someone ${type}d your post "${
+            post.title?.substring(0, 30) || "your post"
+          }..."`,
+          data: { type, postId, url: `/posts/${postId}` },
+        });
+      } catch (notifError) {
+        // Don't fail the reaction if notification fails
+        console.error("Failed to send notification:", notifError);
+      }
+    }
 
     return NextResponse.json(
       { message: `Post ${type}d successfully` },

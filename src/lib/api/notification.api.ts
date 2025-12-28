@@ -30,8 +30,8 @@ export const notificationApi = {
 
   // Unsubscribe from push notifications
   async unsubscribe() {
-    const response = await fetch("/api/notification/unsubscribe", {
-      method: "POST",
+    const response = await fetch("/api/notification/subscribe", {
+      method: "DELETE",
       headers: {
         "Content-Type": "application/json",
       },
