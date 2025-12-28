@@ -184,6 +184,11 @@ export default function PostList({ posts }: PostListProps) {
     }
   };
 
+  const handleAvatarClick = (userId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    router.push(`/profile/${userId}`);
+  };
+
   return (
     <div className="space-y-4">
       {posts.map((post) => {
@@ -198,16 +203,24 @@ export default function PostList({ posts }: PostListProps) {
           >
             <CardHeader>
               <div className="flex items-center gap-3">
-                <Avatar>
-                  <AvatarFallback>
-                    {(post.author_name || post.author_email || post.user_id)
-                      .substring(0, 2)
-                      .toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
+                <div
+                  onClick={(e) => handleAvatarClick(post.user_id, e)}
+                  className="cursor-pointer hover:opacity-80 transition-opacity"
+                >
+                  <Avatar>
+                    <AvatarFallback>
+                      {(post.author_name || post.author_email || post.user_id)
+                        .substring(0, 2)
+                        .toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
-                    <span className="font-semibold">
+                    <span
+                      className="font-semibold cursor-pointer hover:underline"
+                      onClick={(e) => handleAvatarClick(post.user_id, e)}
+                    >
                       {post.author_name ||
                         post.author_email?.split("@")[0] ||
                         `User ${post.user_id.substring(0, 8)}`}

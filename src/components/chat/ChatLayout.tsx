@@ -23,7 +23,11 @@ interface DirectMessage {
   created_at: string;
 }
 
-const ChatLayout: React.FC = () => {
+interface ChatLayoutProps {
+  partnerId?: string;
+}
+
+const ChatLayout: React.FC<ChatLayoutProps> = ({ partnerId }) => {
   const router = useRouter();
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [users, setUsers] = useState<User[]>([]);
@@ -36,15 +40,15 @@ const ChatLayout: React.FC = () => {
   useEffect(() => {
     const checkAuth = async () => {
       const supabase = createClient();
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { user } } = await supabase.auth.getUser();
       
-      if (!session?.user) {
+      if (!user) {
         // Redirect to login if not authenticated
         router.push('/auth/login');
         return;
       }
       
-      setCurrentUserId(session.user.id);
+      setCurrentUserId(user.id);
     };
     
     checkAuth();
@@ -72,8 +76,20 @@ const ChatLayout: React.FC = () => {
         
         setUsers(userList);
         
-        // Auto-select first conversation if available
-        if (userList.length > 0 && !selectedPartnerId) {
+        // If partnerId prop is provided, select that partner
+        if (partnerId) {
+          const partner = userList.find(u => u.id === partnerId);
+          if (partner) {
+            setSelectedPartnerId(partner.id);
+            setSelectedPartnerName(partner.name);
+          } else {
+            // Partner not in conversation list, fetch partner details
+            setSelectedPartnerId(partnerId);
+            // Partner name will be fetched by ChatWindow
+          }
+        }
+        // Otherwise, auto-select first conversation if available
+        else if (userList.length > 0 && !selectedPartnerId) {
           setSelectedPartnerId(userList[0].id);
           setSelectedPartnerName(userList[0].name);
         }
@@ -86,7 +102,7 @@ const ChatLayout: React.FC = () => {
     };
 
     fetchConversations();
-  }, [selectedPartnerId, currentUserId]);
+  }, [selectedPartnerId, currentUserId, partnerId]);
 
   const getTimeAgo = (date: Date): string => {
     const now = new Date();
@@ -207,7 +223,10 @@ const ChatLayout: React.FC = () => {
             users={users}
             selectedPartnerId={selectedPartnerId}
             currentUserId={currentUserId}
-            onSelectPartner={handleSelectPartner}
+            onSelectPartner={(id, name) => {
+              // Navigate to /chat/[userId] when selecting a partner
+              router.push(`/chat/${id}`);
+            }}
             onUpdateConversation={handleUpdateConversation}
           />
         )}
