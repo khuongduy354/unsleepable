@@ -8,6 +8,7 @@ import {
   CommunityStatsDTO,
   PendingMember,
 } from "../types/community.type";
+import { ITagRepository } from "../types/tag.type";
 
 export interface ICommunityService {
   createCommunity(data: CreateCommunityDTO): Promise<Community>;
@@ -59,7 +60,10 @@ export interface ICommunityService {
 }
 
 export class CommunityService implements ICommunityService {
-  constructor(private communityRepository: ICommunityRepository) {}
+  constructor(
+    private communityRepository: ICommunityRepository,
+    private tagRepository?: ITagRepository
+  ) {}
 
   async createCommunity(data: CreateCommunityDTO): Promise<Community> {
     // Validation
@@ -83,6 +87,25 @@ export class CommunityService implements ICommunityService {
     if (!data.tags) {
       data.tags = [];
     }
+
+    // Normalize and deduplicate tags
+    const uniqueTagNames = [
+      ...new Set(data.tags.map((name) => name.trim().toLowerCase())),
+    ].filter((tag) => tag.length > 0);
+
+    // Create Tag entries for each unique tag if tagRepository is available
+    if (this.tagRepository && uniqueTagNames.length > 0) {
+      for (const tagName of uniqueTagNames) {
+        // Check if tag exists, if not create it
+        let tag = await this.tagRepository.findByName(tagName);
+        if (!tag) {
+          await this.tagRepository.create({ Name: tagName });
+        }
+      }
+    }
+
+    // Update data.tags with normalized unique tags
+    data.tags = uniqueTagNames;
 
     return await this.communityRepository.create(data);
   }

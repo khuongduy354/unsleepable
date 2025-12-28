@@ -61,6 +61,7 @@ export async function POST(request: NextRequest) {
       description: body.description,
       visibility: body.visibility,
       creator_id: userId,
+      tags: body.tags || [],
     };
 
     const community = await communityService.createCommunity(createData);

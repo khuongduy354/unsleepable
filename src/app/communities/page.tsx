@@ -117,6 +117,7 @@ export default function CommunitiesPage() {
     name: "",
     description: "",
     visibility: "public" as "public" | "private",
+    tags: "" as string,
   });
 
   const [loading, setLoading] = useState(false);
@@ -594,12 +595,26 @@ export default function CommunitiesPage() {
     setError("");
 
     try {
-      await communityApi.create(userId, formData);
+      // Parse tags from comma-separated string
+      const tagsArray = formData.tags
+        .split(",")
+        .map((tag) => tag.trim())
+        .filter((tag) => tag.length > 0);
+
+      await communityApi.create(userId, {
+        ...formData,
+        tags: tagsArray,
+      });
       toast({
         title: "Success",
         description: "Community created successfully",
       });
-      setFormData({ name: "", description: "", visibility: "public" });
+      setFormData({
+        name: "",
+        description: "",
+        visibility: "public",
+        tags: "",
+      });
       setShowCreateForm(false);
       await fetchOwnedCommunities();
       await fetchDiscoverCommunities(currentPage);
@@ -949,6 +964,21 @@ export default function CommunitiesPage() {
                   />
                 </div>
                 <div className="space-y-2">
+                  <Label htmlFor="tags">Tags (optional)</Label>
+                  <Input
+                    id="tags"
+                    value={formData.tags}
+                    onChange={(e) =>
+                      setFormData({ ...formData, tags: e.target.value })
+                    }
+                    placeholder="Enter tags separated by commas (e.g., technology, health, gaming)"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Tags help users discover your community. Separate multiple
+                    tags with commas.
+                  </p>
+                </div>
+                <div className="space-y-2">
                   <Label htmlFor="visibility">Visibility</Label>
                   <Select
                     value={formData.visibility}
@@ -993,6 +1023,7 @@ export default function CommunitiesPage() {
                         name: "",
                         description: "",
                         visibility: "public",
+                        tags: "",
                       });
                     }}
                   >

@@ -31,11 +31,15 @@ export async function setupCommunityService() {
   // Create Supabase client
   const supabase = await createClient();
 
-  // Initialize repository with Supabase client
+  // Initialize repositories with Supabase client
   const communityRepository = new SupabaseCommunityRepository(supabase);
+  const tagRepository = new SupabaseTagRepository(supabase);
 
-  // Initialize service with repository
-  const communityService = new CommunityService(communityRepository);
+  // Initialize service with repositories
+  const communityService = new CommunityService(
+    communityRepository,
+    tagRepository
+  );
 
   return communityService;
 }
@@ -122,7 +126,10 @@ export async function setupTagService() {
   const postRepository = new SupabasePostRepository(supabase);
   const communityRepository = new SupabaseCommunityRepository(supabase);
 
-  const communityService = new CommunityService(communityRepository);
+  const communityService = new CommunityService(
+    communityRepository,
+    tagRepository
+  );
 
   const tagService = new TagService(
     tagRepository,

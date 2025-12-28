@@ -74,6 +74,7 @@ export const communityApi = {
       name: string;
       description: string;
       visibility: "public" | "private";
+      tags?: string[];
     }
   ) {
     const response = await fetch("/api/community", {
