@@ -93,6 +93,11 @@ export interface IPostService {
   getPendingPostsByAdmin(adminId: string): Promise<Post[]>;
   updatePost(id: string, data: UpdatePostDTO): Promise<Post>;
   deletePost(id: string): Promise<void>;
+  reactToPost(
+    postId: string,
+    userId: string,
+    type: "like" | "dislike"
+  ): Promise<void>;
 
   // Comment methods
   createComment(data: CreateCommentDTO): Promise<Comment>;

@@ -9,3 +9,4 @@ export { notificationApi } from "./notification.api";
 export { tagApi } from "./tag.api";
 export { userApi } from "./user.api";
 export { reportApi } from "./report.api";
+export { assetApi } from "./asset.api";

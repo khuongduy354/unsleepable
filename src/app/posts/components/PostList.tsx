@@ -144,11 +144,11 @@ export default function PostList({ posts }: PostListProps) {
     }
     try {
       await postApi.react(postId, userId, "like");
-      window.location.reload();
       toast({
         title: "Success",
         description: "Post liked",
       });
+      window.location.reload();
     } catch (error) {
       toast({
         title: "Error",
@@ -170,11 +170,11 @@ export default function PostList({ posts }: PostListProps) {
     }
     try {
       await postApi.react(postId, userId, "dislike");
-      window.location.reload();
       toast({
         title: "Success",
         description: "Post disliked",
       });
+      window.location.reload();
     } catch (error) {
       toast({
         title: "Error",

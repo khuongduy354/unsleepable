@@ -356,6 +356,15 @@ export default function CommunitiesPage() {
     fetchDiscoverCommunities(currentPage);
   }, [userId, currentPage]);
 
+  // Load pending items when switching to owned communities tab
+  useEffect(() => {
+    if (activeTab === "owned" && userId && ownedCommunities.length > 0) {
+      fetchPendingPosts();
+      fetchPendingMembers();
+      fetchPendingReports();
+    }
+  }, [activeTab, userId, ownedCommunities]);
+
   // Join community (sends request for approval)
   const handleJoin = async (communityId: string) => {
     if (!userId) {

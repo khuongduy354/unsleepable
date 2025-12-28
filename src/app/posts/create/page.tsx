@@ -24,6 +24,7 @@ import {
 import { Loader2, ArrowLeft, Send } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import AppLayout from "@/components/AppLayout";
+import AssetAutocomplete from "@/components/ui/asset-autocomplete";
 
 interface Community {
   id: string;
@@ -244,15 +245,12 @@ export default function CreatePostPage() {
               {/* Content */}
               <div className="space-y-2">
                 <Label htmlFor="content">Content *</Label>
-                <Textarea
-                  id="content"
-                  placeholder="What's on your mind? (Paste images with Ctrl+V)"
+                <AssetAutocomplete
                   value={content}
-                  onChange={(e) => setContent(e.target.value)}
+                  onChange={setContent}
                   onPaste={handlePaste}
-                  required
-                  rows={10}
-                  className="resize-y"
+                  placeholder="What's on your mind? Type @ to reference files, paste images with Ctrl+V"
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                   disabled={uploadingImage}
                 />
                 {uploadingImage && (

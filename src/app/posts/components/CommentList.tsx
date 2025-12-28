@@ -227,8 +227,17 @@ export default function CommentList({
               {replies[comment.id].map((reply) => (
                 <div key={reply.id} className="border rounded p-3 bg-gray-50">
                   <p className="text-sm">{reply.content}</p>
-                  <div className="text-xs text-gray-400 mt-1">
-                    {new Date(reply.created_at).toLocaleDateString()}
+                  <div className="flex gap-3 text-xs text-gray-400 mt-1">
+                    <span>
+                      {new Date(reply.created_at).toLocaleDateString()}
+                    </span>
+                    <button
+                      onClick={() => handleReportClick(reply.id)}
+                      className="text-red-500 hover:text-red-700 flex items-center gap-1"
+                      title="Report reply"
+                    >
+                      <Flag className="w-3 h-3" />
+                    </button>
                   </div>
                 </div>
               ))}

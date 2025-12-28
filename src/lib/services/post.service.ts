@@ -256,4 +256,81 @@ export class PostService implements IPostService {
 
     await this.postRepository.deleteComment(id);
   }
+
+  async reactToPost(
+    postId: string,
+    userId: string,
+    type: "like" | "dislike"
+  ): Promise<void> {
+    // Check if post exists
+    const post = await this.postRepository.findById(postId);
+    if (!post) {
+      throw new Error("Post not found");
+    }
+
+    // Check if user already reacted
+    const { data: existingReaction, error } = await (
+      this.postRepository as any
+    ).supabase
+      .from("Reaction")
+      .select("*")
+      .eq("post_id", postId)
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (error && error.code !== "PGRST116") {
+      throw new Error(`Failed to check existing reaction: ${error.message}`);
+    }
+
+    if (existingReaction) {
+      // If same type, remove the reaction (toggle off)
+      if (existingReaction.type === type) {
+        await (this.postRepository as any).supabase
+          .from("Reaction")
+          .delete()
+          .eq("id", existingReaction.id);
+
+        // Update post counts
+        const countField = type === "like" ? "likes_count" : "dislikes_count";
+        await (this.postRepository as any).supabase
+          .from("Post")
+          .update({ [countField]: Math.max(0, post[countField] - 1) })
+          .eq("id", postId);
+      } else {
+        // If different type, update the reaction
+        await (this.postRepository as any).supabase
+          .from("Reaction")
+          .update({ type })
+          .eq("id", existingReaction.id);
+
+        // Update both counts
+        const oldCountField =
+          existingReaction.type === "like" ? "likes_count" : "dislikes_count";
+        const newCountField =
+          type === "like" ? "likes_count" : "dislikes_count";
+
+        await (this.postRepository as any).supabase
+          .from("Post")
+          .update({
+            [oldCountField]: Math.max(0, post[oldCountField] - 1),
+            [newCountField]: post[newCountField] + 1,
+          })
+          .eq("id", postId);
+      }
+    } else {
+      // Create new reaction
+      await (this.postRepository as any).supabase.from("Reaction").insert({
+        post_id: postId,
+        user_id: userId,
+        type,
+      });
+
+      // Update post count
+      const countField = type === "like" ? "likes_count" : "dislikes_count";
+      await (this.postRepository as any).supabase
+        .from("Post")
+        .update({ [countField]: post[countField] + 1 })
+        .eq("id", postId);
+    }
+  }
 }
