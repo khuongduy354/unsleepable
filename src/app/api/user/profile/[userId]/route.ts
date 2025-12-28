@@ -20,8 +20,8 @@ export async function GET(
 
     // Get current user to determine if viewing own profile
     const supabase = await createClient();
-    const { data: { session } } = await supabase.auth.getSession();
-    const currentUserId = session?.user?.id;
+    const { data: { user } } = await supabase.auth.getUser();
+    const currentUserId = user?.id;
 
     const userService = await service.getUserService();
     const profile = await userService.getProfile(userId);

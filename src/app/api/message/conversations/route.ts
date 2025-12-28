@@ -5,18 +5,18 @@ import { createClient } from "@/utils/supabase/server";
 
 export async function GET(request: NextRequest) {
   try {
-    // Get authenticated user from session
+    // Get authenticated user
     const supabase = await createClient();
-    const { data: { session } } = await supabase.auth.getSession();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
     
-    if (!session?.user) {
+    if (authError || !user) {
       return NextResponse.json(
         { error: "Unauthorized. Please login." },
         { status: 401 }
       );
     }
     
-    const currentUserId = session.user.id;
+    const currentUserId = user.id;
 
     const messageService = await service.getMessageService();
     const conversations = await messageService.getConversations(currentUserId);

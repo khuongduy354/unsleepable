@@ -85,7 +85,7 @@ export class SupabaseDirectMessageRepository implements IDirectMessageRepository
     // Lấy thông tin user cho mỗi partner
     const partnerIds = Array.from(conversationMap.keys());
     const { data: users, error: usersError } = await this.supabase
-      .from("User")
+      .from("UserAccount")
       .select("id, username")
       .in("id", partnerIds);
 

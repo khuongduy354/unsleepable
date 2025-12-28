@@ -16,7 +16,6 @@ export async function login(formData: FormData) {
   });
 
   if (error) {
-    console.error(error);
     // Đẩy message sang /error để nhìn rõ
     redirect(`/error?message=${encodeURIComponent(error.message)}`);
   }

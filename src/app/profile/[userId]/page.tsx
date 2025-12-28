@@ -29,8 +29,8 @@ export default function ProfilePage({ params }: { params: Promise<{ userId: stri
   useEffect(() => {
     const checkAuth = async () => {
       const supabase = createClient();
-      const { data: { session } } = await supabase.auth.getSession();
-      setCurrentUserId(session?.user?.id || null);
+      const { data: { user } } = await supabase.auth.getUser();
+      setCurrentUserId(user?.id || null);
     };
     checkAuth();
   }, []);
