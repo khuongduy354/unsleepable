@@ -24,19 +24,17 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     try {
       const supabase = createClient();
       const {
-        data: { session },
-      } = await supabase.auth.getSession();
+        data: { user },
+      } = await supabase.auth.getUser();
 
-      if (session?.user) {
-        setUser(session.user);
+      if (user) {
+        setUser(user);
         // Store in localStorage for backwards compatibility
         localStorage.setItem("isLoggedIn", "true");
-        localStorage.setItem("userId", session.user.id);
+        localStorage.setItem("userId", user.id);
         localStorage.setItem(
           "username",
-          session.user.user_metadata?.full_name ||
-            session.user.email?.split("@")[0] ||
-            "User"
+          user.user_metadata?.full_name || user.email?.split("@")[0] || "User"
         );
       } else {
         setUser(null);

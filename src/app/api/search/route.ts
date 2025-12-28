@@ -23,9 +23,9 @@ export async function GET(req: NextRequest) {
     // Get current user for access control validation
     const supabase = await createClient();
     const {
-      data: { session },
-    } = await supabase.auth.getSession();
-    const userId = session?.user?.id;
+      data: { user },
+    } = await supabase.auth.getUser();
+    const userId = user?.id;
 
     const searchService = await getSearchService();
 

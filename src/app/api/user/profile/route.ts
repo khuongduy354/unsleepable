@@ -10,9 +10,11 @@ export async function GET(request: NextRequest) {
   try {
     // Get authenticated user
     const supabase = await createClient();
-    const { data: { session } } = await supabase.auth.getSession();
-    
-    if (!session?.user) {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
       return NextResponse.json(
         { error: "Unauthorized. Please login." },
         { status: 401 }
@@ -20,7 +22,7 @@ export async function GET(request: NextRequest) {
     }
 
     const userService = await service.getUserService();
-    const profile = await userService.getProfile(session.user.id);
+    const profile = await userService.getProfile(user.id);
 
     return NextResponse.json(profile);
   } catch (error) {
@@ -37,8 +39,10 @@ export async function PUT(request: NextRequest) {
   try {
     // Get authenticated user
     const supabase = await createClient();
-    const { data: { session } } = await supabase.auth.getSession();
-    
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
     if (!session?.user) {
       return NextResponse.json(
         { error: "Unauthorized. Please login." },
@@ -58,7 +62,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const userService = await service.getUserService();
-    const updatedProfile = await userService.updateProfile(session.user.id, {
+    const updatedProfile = await userService.updateProfile(user.id, {
       username,
       email,
     });
@@ -66,10 +70,13 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json(updatedProfile);
   } catch (error) {
     console.error("Error updating user profile:", error);
-    const statusCode = (error as Error).message.includes("already taken") || 
-                       (error as Error).message.includes("Invalid") ||
-                       (error as Error).message.includes("must") ? 400 : 500;
-    
+    const statusCode =
+      (error as Error).message.includes("already taken") ||
+      (error as Error).message.includes("Invalid") ||
+      (error as Error).message.includes("must")
+        ? 400
+        : 500;
+
     return NextResponse.json(
       { error: "Failed to update profile.", details: (error as Error).message },
       { status: statusCode }

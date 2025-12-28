@@ -55,7 +55,7 @@ export class PostService implements IPostService {
     }
 
     // Map posts to include author info and community name
-    return (posts || []).map((post) => {
+    return (posts || []).map((post: any) => {
       const author = post.author as any;
       const community = post.community as any;
       return {
@@ -203,7 +203,12 @@ export class PostService implements IPostService {
 
   async updatePost(id: string, data: UpdatePostDTO): Promise<Post> {
     // Validate that at least one field is being updated
-    if (!data.title && !data.content) {
+    const hasUpdate = Object.keys(data).some((key) => {
+      const value = data[key as keyof UpdatePostDTO];
+      return value !== undefined && value !== null;
+    });
+
+    if (!hasUpdate) {
       throw new Error("At least one field must be provided for update");
     }
 
