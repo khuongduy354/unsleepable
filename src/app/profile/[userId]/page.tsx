@@ -147,17 +147,6 @@ export default function ProfilePage({ params }: { params: Promise<{ userId: stri
                         </Button>
                       </div>
                     )}
-
-                    {isOwnProfile && (
-                      <div className="mt-4">
-                        <Button
-                          onClick={() => router.push("/profile/edit")}
-                          variant="outline"
-                        >
-                          Edit Profile
-                        </Button>
-                      </div>
-                    )}
                   </div>
                 </div>
               </CardContent>

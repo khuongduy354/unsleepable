@@ -72,6 +72,7 @@ export interface IPostRepository {
   findAll(): Promise<Post[]>;
   findByUserId(userId: string): Promise<Post[]>;
   findByCommunityId(communityId: string): Promise<Post[]>;
+  findTrending(limit?: number): Promise<Post[]>;
   update(id: string, data: UpdatePostDTO): Promise<Post>;
   delete(id: string): Promise<void>;
 
@@ -93,6 +94,7 @@ export interface IPostService {
   getPendingPostsByAdmin(adminId: string): Promise<Post[]>;
   updatePost(id: string, data: UpdatePostDTO): Promise<Post>;
   deletePost(id: string): Promise<void>;
+  getTrendingPosts(limit?: number): Promise<Post[]>;
   reactToPost(
     postId: string,
     userId: string,
