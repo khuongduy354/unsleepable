@@ -1,18 +1,22 @@
 import { supabaseAdmin } from "@/utils/supabase/admin";
-import { NextResponse } from "next/server";
+import { requireAuth } from "@/lib/auth-middleware";
+import { NextRequest, NextResponse } from "next/server";
 
-
-
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
+    // Require authentication for uploads
+    let userId: string;
+    try {
+      userId = await requireAuth(req);
+    } catch {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const formData = await req.formData();
     const file = formData.get("file") as File;
-    
+
     if (!file) {
-      return NextResponse.json(
-        { error: "No file uploaded" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
     }
 
     const fileBuffer = Buffer.from(await file.arrayBuffer());
@@ -27,7 +31,7 @@ export async function POST(req: Request) {
           upsert: false,
         });
 
-    console.info("Successfully upload image")
+    console.info("Successfully upload image");
 
     if (uploadError) {
       console.error("Supabase upload error:", uploadError);
@@ -40,6 +44,20 @@ export async function POST(req: Request) {
     const { data: urlData } = supabaseAdmin.storage
       .from("media")
       .getPublicUrl(filePath);
+
+    // Record the upload in Asset table
+    const { error: assetError } = await supabaseAdmin.from("Asset").insert({
+      filename: filePath,
+      type: file.type,
+      size: file.size,
+      url: urlData.publicUrl,
+      user_id: userId, // Will be null for anonymous uploads
+    });
+
+    if (assetError) {
+      console.error("Error recording asset:", assetError);
+      // Don't fail the upload, just log the error
+    }
 
     return NextResponse.json({
       success: true,
@@ -56,4 +74,3 @@ export async function POST(req: Request) {
     );
   }
 }
-
