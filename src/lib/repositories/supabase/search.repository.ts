@@ -18,9 +18,9 @@ export class SupabaseSearchRepository implements ISearchRepository {
     } = params;
 
     // Separate tags by operator
-    const orTags = tagFilters.find(f => f.operator === 'OR')?.tags || null;
-    const andTags = tagFilters.find(f => f.operator === 'AND')?.tags || null;
-    const notTags = tagFilters.find(f => f.operator === 'NOT')?.tags || null;
+    const orTags = tagFilters.find((f) => f.operator === "OR")?.tags || null;
+    const andTags = tagFilters.find((f) => f.operator === "AND")?.tags || null;
+    const notTags = tagFilters.find((f) => f.operator === "NOT")?.tags || null;
 
     const { data, error } = await this.supabase.rpc("search_posts_with_tags", {
       search_query: query,
@@ -36,6 +36,28 @@ export class SupabaseSearchRepository implements ISearchRepository {
       throw new Error(`Failed to search posts: ${error.message}`);
     }
 
-    return data as PostSearchResult[];
+    // Get community names for the results
+    const results = data as PostSearchResult[];
+    if (results.length === 0) {
+      return results;
+    }
+
+    const communityIds = [...new Set(results.map((r) => r.community_id))];
+    const { data: communities, error: commError } = await this.supabase
+      .from("Community")
+      .select("id, name")
+      .in("id", communityIds);
+
+    if (commError) {
+      console.error("Failed to fetch community names:", commError);
+      return results;
+    }
+
+    // Map community names to results
+    const communityMap = new Map(communities?.map((c) => [c.id, c.name]) || []);
+    return results.map((result) => ({
+      ...result,
+      community_name: communityMap.get(result.community_id) || undefined,
+    }));
   }
 }

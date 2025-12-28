@@ -6,6 +6,7 @@ import {
   CommunityFilters,
   PaginatedCommunities,
   CommunityStatsDTO,
+  PendingMember,
 } from "../types/community.type";
 
 export interface ICommunityService {
@@ -31,6 +32,25 @@ export interface ICommunityService {
   syncTagToCommunity(communityId: string, tagName: string): Promise<void>;
   getStats(id: string, userId: string): Promise<CommunityStatsDTO>;
   isMember(communityId: string, userId: string): Promise<boolean>;
+  joinCommunity(
+    communityId: string,
+    userId: string
+  ): Promise<{ status: "pending" | "approved"; message: string }>;
+  leaveCommunity(communityId: string, userId: string): Promise<void>;
+  approveMember(
+    communityId: string,
+    userId: string,
+    adminId: string
+  ): Promise<void>;
+  rejectMember(
+    communityId: string,
+    userId: string,
+    adminId: string
+  ): Promise<void>;
+  getPendingMembers(
+    communityId: string,
+    adminId: string
+  ): Promise<PendingMember[]>;
 }
 
 export class CommunityService implements ICommunityService {
@@ -242,5 +262,140 @@ export class CommunityService implements ICommunityService {
       throw new Error("User ID is required");
     }
     return await this.communityRepository.isMember(communityId, userId);
+  }
+
+  async joinCommunity(
+    communityId: string,
+    userId: string
+  ): Promise<{ status: "pending" | "approved"; message: string }> {
+    if (!communityId) {
+      throw new Error("Community ID is required");
+    }
+    if (!userId) {
+      throw new Error("User ID is required");
+    }
+
+    // Check if community exists
+    const community = await this.communityRepository.findById(communityId);
+    if (!community) {
+      throw new Error("Community not found");
+    }
+
+    // Check if user is already a member
+    const isMember = await this.communityRepository.isMember(
+      communityId,
+      userId
+    );
+    if (isMember) {
+      throw new Error("User is already a member of this community");
+    }
+
+    // Check if user already has a pending request
+    const hasPendingRequest = await this.communityRepository.hasPendingRequest(
+      communityId,
+      userId
+    );
+    if (hasPendingRequest) {
+      throw new Error(
+        "You already have a pending join request for this community"
+      );
+    }
+
+    // Add member with pending status - requires admin approval
+    await this.communityRepository.addMember(
+      communityId,
+      userId,
+      "member",
+      "pending"
+    );
+
+    return {
+      status: "pending",
+      message: "Join request submitted. Waiting for admin approval.",
+    };
+  }
+
+  async approveMember(
+    communityId: string,
+    userId: string,
+    adminId: string
+  ): Promise<void> {
+    // Verify admin is owner of the community
+    const isOwner = await this.communityRepository.isOwner(
+      communityId,
+      adminId
+    );
+    if (!isOwner) {
+      throw new Error("Unauthorized: Only community owner can approve members");
+    }
+
+    await this.communityRepository.approveMember(communityId, userId);
+  }
+
+  async rejectMember(
+    communityId: string,
+    userId: string,
+    adminId: string
+  ): Promise<void> {
+    // Verify admin is owner of the community
+    const isOwner = await this.communityRepository.isOwner(
+      communityId,
+      adminId
+    );
+    if (!isOwner) {
+      throw new Error("Unauthorized: Only community owner can reject members");
+    }
+
+    await this.communityRepository.rejectMember(communityId, userId);
+  }
+
+  async getPendingMembers(
+    communityId: string,
+    adminId: string
+  ): Promise<any[]> {
+    // Verify admin is owner of the community
+    const isOwner = await this.communityRepository.isOwner(
+      communityId,
+      adminId
+    );
+    if (!isOwner) {
+      throw new Error(
+        "Unauthorized: Only community owner can view pending members"
+      );
+    }
+
+    return await this.communityRepository.getPendingMembers(communityId);
+  }
+
+  async leaveCommunity(communityId: string, userId: string): Promise<void> {
+    if (!communityId) {
+      throw new Error("Community ID is required");
+    }
+    if (!userId) {
+      throw new Error("User ID is required");
+    }
+
+    // Check if community exists
+    const community = await this.communityRepository.findById(communityId);
+    if (!community) {
+      throw new Error("Community not found");
+    }
+
+    // Check if user is a member
+    const isMember = await this.communityRepository.isMember(
+      communityId,
+      userId
+    );
+    if (!isMember) {
+      throw new Error("User is not a member of this community");
+    }
+
+    // Don't allow owner to leave their own community
+    const isOwner = await this.communityRepository.isOwner(communityId, userId);
+    if (isOwner) {
+      throw new Error("Owner cannot leave their own community");
+    }
+
+    await this.communityRepository.removeMember(communityId, userId);
   }
 }

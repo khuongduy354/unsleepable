@@ -38,6 +38,7 @@ export interface Post {
   summary?: string | null;
   author_email?: string;
   author_name?: string;
+  community_name?: string;
 }
 
 // Comment DTOs and interfaces

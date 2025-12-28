@@ -13,6 +13,7 @@ import {
   CommunityFilters,
   PaginatedCommunities,
   CommunityStatsDTO,
+  PendingMember,
 } from "../../types/community.type";
 
 // export class SupabasePostRepository implements IPostRepository {
@@ -371,9 +372,10 @@ export class SupabaseCommunityRepository implements ICommunityRepository {
   async isMember(communityId: string, userId: string): Promise<boolean> {
     const { data, error } = await this.supabase
       .from("CommunityMember")
-      .select("user_account_id")
+      .select("user_account_id, status")
       .eq("community_id", communityId)
       .eq("user_account_id", userId)
+      .eq("status", "approved") // Only approved members count as members
       .single();
 
     if (error) {
@@ -385,6 +387,29 @@ export class SupabaseCommunityRepository implements ICommunityRepository {
 
     return !!data;
   }
+
+  async hasPendingRequest(
+    communityId: string,
+    userId: string
+  ): Promise<boolean> {
+    const { data, error } = await this.supabase
+      .from("CommunityMember")
+      .select("user_account_id, status")
+      .eq("community_id", communityId)
+      .eq("user_account_id", userId)
+      .eq("status", "pending")
+      .single();
+
+    if (error) {
+      if (error.code === "PGRST116") {
+        return false; // No pending request found
+      }
+      throw new Error(`Failed to check pending request: ${error.message}`);
+    }
+
+    return !!data;
+  }
+
   async addTagToCommunityArray(
     communityId: string,
     tagName: string
@@ -470,5 +495,90 @@ export class SupabaseCommunityRepository implements ICommunityRepository {
       totalMembers: memberCount || 0,
       activeEngagementRate: activeEngagementRate,
     };
+  }
+
+  async addMember(
+    communityId: string,
+    userId: string,
+    role: string = "member",
+    status: "pending" | "approved" = "pending"
+  ): Promise<void> {
+    const { error } = await this.supabase.from("CommunityMember").insert({
+      user_account_id: userId,
+      community_id: communityId,
+      role: role,
+      status: status,
+    });
+
+    if (error) {
+      throw new Error(`Failed to add member: ${error.message}`);
+    }
+  }
+
+  async approveMember(communityId: string, userId: string): Promise<void> {
+    const { error } = await this.supabase
+      .from("CommunityMember")
+      .update({ status: "approved" })
+      .eq("community_id", communityId)
+      .eq("user_account_id", userId);
+
+    if (error) {
+      throw new Error(`Failed to approve member: ${error.message}`);
+    }
+  }
+
+  async rejectMember(communityId: string, userId: string): Promise<void> {
+    // Rejecting removes the pending request
+    const { error } = await this.supabase
+      .from("CommunityMember")
+      .delete()
+      .eq("community_id", communityId)
+      .eq("user_account_id", userId)
+      .eq("status", "pending");
+
+    if (error) {
+      throw new Error(`Failed to reject member: ${error.message}`);
+    }
+  }
+
+  async getPendingMembers(communityId: string): Promise<PendingMember[]> {
+    const { data, error } = await this.supabase
+      .from("CommunityMember")
+      .select(
+        `
+        user_account_id,
+        joined_at,
+        UserAccount:user_account_id (
+          username,
+          email
+        )
+      `
+      )
+      .eq("community_id", communityId)
+      .eq("status", "pending")
+      .order("joined_at", { ascending: false });
+
+    if (error) {
+      throw new Error(`Failed to get pending members: ${error.message}`);
+    }
+
+    return (data || []).map((item: any) => ({
+      user_id: item.user_account_id,
+      username: item.UserAccount?.username,
+      email: item.UserAccount?.email,
+      requested_at: item.joined_at,
+    }));
+  }
+
+  async removeMember(communityId: string, userId: string): Promise<void> {
+    const { error } = await this.supabase
+      .from("CommunityMember")
+      .delete()
+      .eq("community_id", communityId)
+      .eq("user_account_id", userId);
+
+    if (error) {
+      throw new Error(`Failed to remove member: ${error.message}`);
+    }
   }
 }

@@ -14,6 +14,8 @@ export interface CreateTagDTO {
 export interface ITagRepository {
   create(data: CreateTagDTO): Promise<Tag>;
   findByName(name: string): Promise<Tag | null>;
+  findAll(): Promise<Tag[]>;
+  findByCommunityId(communityId: string): Promise<Tag[]>;
   addTagToPost(postId: string, tagId: string): Promise<PostTag | null>;
   getTagsByPostId(postId: string): Promise<Tag[]>;
 }
@@ -21,4 +23,6 @@ export interface ITagRepository {
 export interface ITagService {
   processAndLinkTags(postId: string, tagNames: string[]): Promise<Tag[]>;
   getTagsForPost(postId: string): Promise<Tag[]>;
+  getAllTags(): Promise<Tag[]>;
+  getTagsByCommunity(communityId: string): Promise<Tag[]>;
 }

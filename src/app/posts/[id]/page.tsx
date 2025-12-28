@@ -44,6 +44,7 @@ interface Post {
   summary?: string | null;
   author_email?: string;
   author_name?: string;
+  community_name?: string;
 }
 
 interface Comment {
@@ -360,8 +361,18 @@ export default function PostDetailPage() {
                   By{" "}
                   {post.author_name ||
                     post.author_email?.split("@")[0] ||
-                    `User ${post.user_id.substring(0, 8)}`}{" "}
-                  • Posted {new Date(post.created_at).toLocaleDateString()} at{" "}
+                    `User ${post.user_id.substring(0, 8)}`}
+                  {post.community_name && (
+                    <>
+                      {" "}
+                      in{" "}
+                      <span className="font-medium text-blue-600">
+                        {post.community_name}
+                      </span>
+                    </>
+                  )}
+                  {" • Posted "}
+                  {new Date(post.created_at).toLocaleDateString()} at{" "}
                   {new Date(post.created_at).toLocaleTimeString()}
                 </CardDescription>
               </div>

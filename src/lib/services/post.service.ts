@@ -9,9 +9,13 @@ import {
   UpdateCommentDTO,
   Comment,
 } from "../types/post.type";
+import { ICommunityRepository } from "../types/community.type";
 
 export class PostService implements IPostService {
-  constructor(private postRepository: IPostRepository) {}
+  constructor(
+    private postRepository: IPostRepository,
+    private communityRepository?: ICommunityRepository
+  ) {}
 
   async createPost(data: CreatePostDTO): Promise<Post> {
     // Add any business logic validation here
@@ -22,7 +26,7 @@ export class PostService implements IPostService {
     if (!data.content || data.content.trim().length === 0) {
       throw new Error("Post content is required");
     }
-    
+
     return await this.postRepository.create(data);
   }
 
@@ -30,25 +34,52 @@ export class PostService implements IPostService {
   async getPendingPosts(filters?: PostFilters): Promise<Post[]> {
     // Fetch posts with status 'pending'
     const allPosts = await this.getPosts(filters);
-    return allPosts.filter(post => post.status === "pending");
+    return allPosts.filter((post) => post.status === "pending");
   }
 
-  // Approve posts
-  async approvePost(id: string): Promise<Post> {
+  // Approve posts - validates that adminId is the owner of the post's community
+  async approvePost(id: string, adminId?: string): Promise<Post> {
     const post = await this.postRepository.findById(id);
     if (!post) {
       throw new Error("Post not found");
     }
-    post.status = "approved";
+
+    // Validate admin ownership if adminId and communityRepository are provided
+    if (adminId && this.communityRepository) {
+      const isOwner = await this.communityRepository.isOwner(
+        post.community_id,
+        adminId
+      );
+      if (!isOwner) {
+        throw new Error(
+          "Unauthorized: You can only approve posts in communities you own"
+        );
+      }
+    }
+
     return await this.postRepository.update(id, { status: "approved" });
   }
-  // Reject posts
-  async rejectPost(id: string): Promise<Post> {
+
+  // Reject posts - validates that adminId is the owner of the post's community
+  async rejectPost(id: string, adminId?: string): Promise<Post> {
     const post = await this.postRepository.findById(id);
     if (!post) {
       throw new Error("Post not found");
     }
-    post.status = "rejected";
+
+    // Validate admin ownership if adminId and communityRepository are provided
+    if (adminId && this.communityRepository) {
+      const isOwner = await this.communityRepository.isOwner(
+        post.community_id,
+        adminId
+      );
+      if (!isOwner) {
+        throw new Error(
+          "Unauthorized: You can only reject posts in communities you own"
+        );
+      }
+    }
+
     return await this.postRepository.update(id, { status: "rejected" });
   }
 

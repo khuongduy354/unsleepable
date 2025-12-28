@@ -15,9 +15,9 @@ import { TagService } from "../services/tag.service";
 import { SupabaseTagRepository } from "@/lib/repositories/supabase/tag.repository";
 
 import { MessageService } from "../services/message.service";
-import { SupabaseDirectMessageRepository } from "@/lib/repositories/supabase/message.repository"; 
-import { ReportService } from "../services/report.service"; 
-import { SupabaseReportRepository } from "@/lib/repositories/supabase/report.repository"; 
+import { SupabaseDirectMessageRepository } from "@/lib/repositories/supabase/message.repository";
+import { ReportService } from "../services/report.service";
+import { SupabaseReportRepository } from "@/lib/repositories/supabase/report.repository";
 // import { IReportService } from "../../services/ReportService";
 /**
  * Dependency Injection Container
@@ -70,7 +70,6 @@ export async function getCommunityService(): Promise<CommunityService> {
   return communityServiceInstance;
 }
 
-
 /**
  * Dependency Injection Container
  * Sets up and wires together all services and repositories
@@ -80,11 +79,12 @@ export async function setupPostService() {
   // Create Supabase client
   const supabase = await createClient();
 
-  // Initialize repository with Supabase client
+  // Initialize repositories with Supabase client
   const postRepository = new SupabasePostRepository(supabase);
+  const communityRepository = new SupabaseCommunityRepository(supabase);
 
-  // Initialize service with repository
-  const postService = new PostService(postRepository);
+  // Initialize service with repositories (communityRepository for ownership validation)
+  const postService = new PostService(postRepository, communityRepository);
 
   return postService;
 }
@@ -115,15 +115,15 @@ export async function setupTagService() {
   const supabase = await createClient();
 
   const tagRepository = new SupabaseTagRepository(supabase);
-  const postRepository = new SupabasePostRepository(supabase); 
-  const communityRepository = new SupabaseCommunityRepository(supabase); 
+  const postRepository = new SupabasePostRepository(supabase);
+  const communityRepository = new SupabaseCommunityRepository(supabase);
 
-  const communityService = new CommunityService(communityRepository); 
+  const communityService = new CommunityService(communityRepository);
 
   const tagService = new TagService(
     tagRepository,
     communityService,
-    postRepository   
+    postRepository
   );
 
   return tagService;
@@ -152,21 +152,25 @@ export async function setupMessageService() {
 
 export async function getMessageService(): Promise<MessageService> {
   if (!messageServiceInstance) {
-      messageServiceInstance = await setupMessageService();
+    messageServiceInstance = await setupMessageService();
   }
   return messageServiceInstance;
 }
 export async function setupReportService(): Promise<ReportService> {
-    // Create Supabase client
-    const supabase = await createClient();
+  // Create Supabase client
+  const supabase = await createClient();
 
-    // 1. Initialize repository with Supabase client
-    const reportRepository = new SupabaseReportRepository(supabase);
+  // 1. Initialize repositories with Supabase client
+  const reportRepository = new SupabaseReportRepository(supabase);
+  const communityRepository = new SupabaseCommunityRepository(supabase);
 
-    // 2. Initialize service with repository
-    const reportService = new ReportService(reportRepository);
+  // 2. Initialize service with repositories (communityRepository for ownership validation)
+  const reportService = new ReportService(
+    reportRepository,
+    communityRepository
+  );
 
-    return reportService;
+  return reportService;
 }
 
 // Global instance variable
@@ -174,9 +178,9 @@ let reportServiceInstance: ReportService | null = null;
 
 // Hàm Public để lấy instance
 export async function getReportService(): Promise<ReportService> {
-    if (!reportServiceInstance) {
-        reportServiceInstance = await setupReportService();
-    }
-    // Trả về instance đã được khởi tạo
-    return reportServiceInstance; 
+  if (!reportServiceInstance) {
+    reportServiceInstance = await setupReportService();
+  }
+  // Trả về instance đã được khởi tạo
+  return reportServiceInstance;
 }

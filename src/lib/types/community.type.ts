@@ -40,8 +40,27 @@ export interface ICommunityRepository {
   delete(id: string): Promise<void>;
   isOwner(communityId: string, userId: string): Promise<boolean>;
   isMember(communityId: string, userId: string): Promise<boolean>;
+  hasPendingRequest(communityId: string, userId: string): Promise<boolean>;
+  addMember(
+    communityId: string,
+    userId: string,
+    role?: string,
+    status?: "pending" | "approved"
+  ): Promise<void>;
+  removeMember(communityId: string, userId: string): Promise<void>;
+  approveMember(communityId: string, userId: string): Promise<void>;
+  rejectMember(communityId: string, userId: string): Promise<void>;
+  getPendingMembers(communityId: string): Promise<PendingMember[]>;
   addTagToCommunityArray(communityId: string, tagName: string): Promise<void>;
   getCommunityStats(communityId: string): Promise<CommunityStatsDTO>;
+}
+
+// Pending member entity
+export interface PendingMember {
+  user_id: string;
+  username?: string;
+  email?: string;
+  requested_at: string;
 }
 
 // Entity

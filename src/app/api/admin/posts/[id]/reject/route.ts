@@ -8,9 +8,9 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
-    await requireAuth(request); // Ensure user is authenticated
+    const adminId = await requireAuth(request); // Get the admin user ID
     const postService = await service.getPostService();
-    const post = await postService.rejectPost(id);
+    const post = await postService.rejectPost(id, adminId);
 
     return NextResponse.json(
       { post, message: "Post rejected successfully" },

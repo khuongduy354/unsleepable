@@ -1,5 +1,10 @@
 import { SupabaseClient } from "@supabase/supabase-js";
-import { ITagRepository, Tag, CreateTagDTO, PostTag } from "../../types/tag.type";
+import {
+  ITagRepository,
+  Tag,
+  CreateTagDTO,
+  PostTag,
+} from "../../types/tag.type";
 
 export class SupabaseTagRepository implements ITagRepository {
   constructor(private supabase: SupabaseClient) {}
@@ -25,6 +30,41 @@ export class SupabaseTagRepository implements ITagRepository {
     return tag as Tag;
   }
 
+  async findAll(): Promise<Tag[]> {
+    const { data: tags, error } = await this.supabase
+      .from("Tag")
+      .select("*")
+      .order("Name", { ascending: true });
+
+    if (error) throw new Error(`Fetch all tags failed: ${error.message}`);
+    return tags as Tag[];
+  }
+
+  async findByCommunityId(communityId: string): Promise<Tag[]> {
+    // Get the community's tags array
+    const { data: community, error: communityError } = await this.supabase
+      .from("Community")
+      .select("tags")
+      .eq("id", communityId)
+      .single();
+
+    if (communityError)
+      throw new Error(`Fetch community failed: ${communityError.message}`);
+
+    const communityTags: string[] = community?.tags || [];
+    if (communityTags.length === 0) return [];
+
+    // Find tags matching the community's tag names
+    const { data: tags, error } = await this.supabase
+      .from("Tag")
+      .select("*")
+      .in("Name", communityTags)
+      .order("Name", { ascending: true });
+
+    if (error) throw new Error(`Fetch community tags failed: ${error.message}`);
+    return tags as Tag[];
+  }
+
   async addTagToPost(postId: string, tagId: string): Promise<PostTag | null> {
     const { data: postTag, error } = await this.supabase
       .from("PostTag")
@@ -33,8 +73,7 @@ export class SupabaseTagRepository implements ITagRepository {
       .single();
 
     if (error) {
-      if (error.code === '23505') 
-        return null; 
+      if (error.code === "23505") return null;
       throw new Error(`Linking tag failed: ${error.message}`);
     }
 
@@ -46,12 +85,12 @@ export class SupabaseTagRepository implements ITagRepository {
     const { data: tags, error } = await this.supabase
       .from("PostTag")
       // Giả sử có sẵn các view/relationship để lấy dữ liệu Tag trực tiếp
-      .select("tag_id, Tag(id, Name)") 
+      .select("tag_id, Tag(id, Name)")
       .eq("post_id", postId);
 
     if (error) throw new Error(`Fetch tags failed: ${error.message}`);
-    
+
     // Cần xử lý data trả về để mapping đúng kiểu Tag[]
-    return (tags as any[]).map(t => t.Tag) as Tag[]; 
+    return (tags as any[]).map((t) => t.Tag) as Tag[];
   }
 }

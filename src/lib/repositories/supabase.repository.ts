@@ -20,6 +20,7 @@ export class SupabasePostRepository implements IPostRepository {
         community_id: data.community_id,
         title: data.title,
         content: data.content,
+        status: "pending", // Posts require admin approval
       })
       .select()
       .single();
@@ -40,6 +41,9 @@ export class SupabasePostRepository implements IPostRepository {
         author:UserAccount!Post_user_id_fkey (
           username,
           email
+        ),
+        community:Community!Post_community_id_fkey (
+          name
         )
       `
       )
@@ -53,13 +57,16 @@ export class SupabasePostRepository implements IPostRepository {
       throw new Error(`Failed to find post: ${error.message}`);
     }
 
-    // Extract author info
+    // Extract author info and community name
     const author = post.author as any;
+    const community = post.community as any;
     return {
       ...post,
       author: undefined,
       author_email: author?.email,
       author_name: author?.username || author?.email?.split("@")[0],
+      community_name: community?.name,
+      community: undefined,
     } as Post;
   }
 
@@ -72,6 +79,9 @@ export class SupabasePostRepository implements IPostRepository {
         author:UserAccount!Post_user_id_fkey (
           username,
           email
+        ),
+        community:Community!Post_community_id_fkey (
+          name
         )
       `
       )
@@ -81,14 +91,17 @@ export class SupabasePostRepository implements IPostRepository {
       throw new Error(`Failed to fetch posts: ${error.message}`);
     }
 
-    // Map posts to include author info
+    // Map posts to include author info and community name
     return (posts || []).map((post) => {
       const author = post.author as any;
+      const community = post.community as any;
       return {
         ...post,
         author: undefined,
         author_email: author?.email,
         author_name: author?.username || author?.email?.split("@")[0],
+        community_name: community?.name,
+        community: undefined,
       } as Post;
     });
   }
@@ -102,6 +115,9 @@ export class SupabasePostRepository implements IPostRepository {
         author:UserAccount!Post_user_id_fkey (
           username,
           email
+        ),
+        community:Community!Post_community_id_fkey (
+          name
         )
       `
       )
@@ -112,14 +128,17 @@ export class SupabasePostRepository implements IPostRepository {
       throw new Error(`Failed to fetch posts by user: ${error.message}`);
     }
 
-    // Map posts to include author info
+    // Map posts to include author info and community name
     return (posts || []).map((post) => {
       const author = post.author as any;
+      const community = post.community as any;
       return {
         ...post,
         author: undefined,
         author_email: author?.email,
         author_name: author?.username || author?.email?.split("@")[0],
+        community_name: community?.name,
+        community: undefined,
       } as Post;
     });
   }
@@ -127,7 +146,18 @@ export class SupabasePostRepository implements IPostRepository {
   async findByCommunityId(communityId: string): Promise<Post[]> {
     const { data: posts, error } = await this.supabase
       .from("Post")
-      .select("*")
+      .select(
+        `
+        *,
+        author:UserAccount!Post_user_id_fkey (
+          username,
+          email
+        ),
+        community:Community!Post_community_id_fkey (
+          name
+        )
+      `
+      )
       .eq("community_id", communityId)
       .order("created_at", { ascending: false });
 
@@ -135,7 +165,19 @@ export class SupabasePostRepository implements IPostRepository {
       throw new Error(`Failed to fetch posts by community: ${error.message}`);
     }
 
-    return posts || [];
+    // Map posts to include author info and community name
+    return (posts || []).map((post) => {
+      const author = post.author as any;
+      const community = post.community as any;
+      return {
+        ...post,
+        author: undefined,
+        author_email: author?.email,
+        author_name: author?.username || author?.email?.split("@")[0],
+        community_name: community?.name,
+        community: undefined,
+      } as Post;
+    });
   }
 
   async update(id: string, data: UpdatePostDTO): Promise<Post> {

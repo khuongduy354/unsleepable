@@ -135,6 +135,14 @@ export default function PostList({ posts }: PostListProps) {
                         post.author_email?.split("@")[0] ||
                         `User ${post.user_id.substring(0, 8)}`}
                     </span>
+                    {post.community_name && (
+                      <>
+                        <span className="text-muted-foreground">in</span>
+                        <span className="text-sm font-medium text-blue-600">
+                          {post.community_name}
+                        </span>
+                      </>
+                    )}
                   </div>
                   <span className="text-xs text-muted-foreground">
                     {timeAgo}

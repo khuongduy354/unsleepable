@@ -1,36 +1,34 @@
-export type ReportEntityType = 'POST' | 'COMMENT';
-export type ReportStatus = 'PENDING' | 'RESOLVED' | 'REJECTED'; 
+export type ReportEntityType = "POST" | "COMMENT";
+export type ReportStatus = "PENDING" | "RESOLVED" | "REJECTED";
 
 export interface CreateReportData {
-    reason: string;
-    reportedEntityId: string; // ID của Post HOẶC Comment
-    reportedEntityType: ReportEntityType;
+  reason: string;
+  reportedEntityId: string; // ID của Post HOẶC Comment
+  reportedEntityType: ReportEntityType;
 }
 
 export interface ReportFilters {
-    reporterId?: string;
+  reporterId?: string;
 }
 
 export interface Report {
-    id: string;
-    reporter_user_id: string;
-    reason: string;
-    status: ReportStatus;
-    created_at: string; 
-    reported_post_id: string | null;
-    reported_comment_id: string | null;
+  id: string;
+  reporter_user_id: string;
+  reason: string;
+  status: ReportStatus;
+  created_at: string;
+  reported_post_id: string | null;
+  reported_comment_id: string | null;
 }
 
-// Định nghĩa Interface cho Repository 
+// Định nghĩa Interface cho Repository
 export interface IReportRepository {
-    save(data: CreateReportData, reporterId: string): Promise<Report>;
-    entityExists(id: string, type: ReportEntityType): Promise<boolean>;
-    findPendingReports(): Promise<Report[]>;
-    getReportById(reportId: string): Promise<Report | null>;
-    updateReportStatus(reportId: string, status: ReportStatus): Promise<Report>;
-    deletePost(postId: string): Promise<void>;
-    deleteComment(commentId: string): Promise<void>;
+  save(data: CreateReportData, reporterId: string): Promise<Report>;
+  entityExists(id: string, type: ReportEntityType): Promise<boolean>;
+  findPendingReports(): Promise<Report[]>;
+  getReportById(reportId: string): Promise<Report | null>;
+  updateReportStatus(reportId: string, status: ReportStatus): Promise<Report>;
+  deletePost(postId: string): Promise<void>;
+  deleteComment(commentId: string): Promise<void>;
+  getCommunityIdForReport(report: Report): Promise<string | null>;
 }
-
-
-

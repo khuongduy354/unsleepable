@@ -2,7 +2,7 @@
 
 export interface TagFilter {
   tags: string[];
-  operator: 'AND' | 'OR' | 'NOT';
+  operator: "AND" | "OR" | "NOT";
 }
 
 export interface SearchPostsDTO {
@@ -26,6 +26,7 @@ export interface PostSearchResult {
   comments_count: number;
   engagement_score: number;
   similarity: number;
+  community_name?: string;
 }
 
 // Repository Interface
