@@ -18,6 +18,9 @@ import { MessageService } from "../services/message.service";
 import { SupabaseDirectMessageRepository } from "@/lib/repositories/supabase/message.repository";
 import { ReportService } from "../services/report.service";
 import { SupabaseReportRepository } from "@/lib/repositories/supabase/report.repository";
+
+import { UserService } from "../services/user.service";
+import { SupabaseUserRepository } from "@/lib/repositories/supabase/user.repository";
 // import { IReportService } from "../../services/ReportService";
 /**
  * Dependency Injection Container
@@ -62,6 +65,7 @@ let communityServiceInstance: CommunityService | null = null;
 let postServiceInstance: PostService | null = null;
 let searchServiceInstance: SearchService | null = null;
 let notificationServiceInstance: NotificationService | null = null;
+let userServiceInstance: UserService | null = null;
 
 export async function getCommunityService(): Promise<CommunityService> {
   if (!communityServiceInstance) {
@@ -183,4 +187,18 @@ export async function getReportService(): Promise<ReportService> {
   }
   // Trả về instance đã được khởi tạo
   return reportServiceInstance;
+}
+
+export async function setupUserService(): Promise<UserService> {
+  const supabase = await createClient();
+  const userRepository = new SupabaseUserRepository(supabase);
+  const userService = new UserService(userRepository);
+  return userService;
+}
+
+export async function getUserService(): Promise<UserService> {
+  if (!userServiceInstance) {
+    userServiceInstance = await setupUserService();
+  }
+  return userServiceInstance;
 }

@@ -5,6 +5,7 @@ import {
   getTagService as originalGetTagService,
   getMessageService as originalGetMessageService,
   getReportService as originalGetReportService,
+  getUserService as originalGetUserService,
 } from "./production-setup";
 
 class Service {
@@ -28,6 +29,10 @@ class Service {
   }
   async getReportService() {
     return await originalGetReportService();
+  }
+
+  async getUserService() {
+    return await originalGetUserService();
   }
 }
 
