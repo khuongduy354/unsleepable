@@ -1,9 +1,12 @@
-import ChatLayout from '@/components/chat/ChatLayout'; 
+import ChatLayout from '@/components/chat/ChatLayout';
+import AppLayout from '@/components/AppLayout';
 
 export default function ChatPage() {
     return (
-        <div className="h-screen w-full">
-            <ChatLayout />
-        </div>
+        <AppLayout>
+            <div className="h-full w-full">
+                <ChatLayout />
+            </div>
+        </AppLayout>
     );
 }

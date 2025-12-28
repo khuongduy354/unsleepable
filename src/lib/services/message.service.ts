@@ -2,7 +2,8 @@ import {
     IMessageService, 
     IDirectMessageRepository, 
     DirectMessage, 
-    CreateMessageDTO 
+    CreateMessageDTO,
+    Conversation
 } from "../types/message.type";
 
 export class MessageService implements IMessageService {
@@ -38,5 +39,14 @@ export class MessageService implements IMessageService {
             offset
         );
         return history;
+    }
+
+    async getConversations(userId: string): Promise<Conversation[]> {
+        if (!userId) {
+            throw new Error("User ID is required.");
+        }
+        
+        const conversations = await this.messageRepository.getConversations(userId);
+        return conversations;
     }
 }

@@ -22,7 +22,7 @@ export async function requireAuth(request: NextRequest): Promise<string> {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-
+  console.log(user)
   if (!user) {
     throw new Error("Unauthorized");
   }
