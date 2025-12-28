@@ -5,7 +5,7 @@ import React, { useEffect, useRef, useState } from "react";
 import MessageInput from "./MessageInput";
 import { messageApi } from "@/lib/api";
 // Import các types/client cần thiết cho Realtime
-import { supabase as supabaseClient } from "@/utils/supabase/client";
+import { createClient } from "@/utils/supabase/client";
 import { RealtimeChannel } from "@supabase/supabase-js";
 
 // Định nghĩa kiểu dữ liệu cho tin nhắn (cần khớp với MessageInput)
@@ -58,6 +58,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   // Logic Realtime và Cleanup
   useEffect(() => {
     let realtimeChannel: RealtimeChannel;
+
+    const supabaseClient = createClient();
 
     if (!loading) {
       // Chỉ subscribe sau khi tải lịch sử xong
