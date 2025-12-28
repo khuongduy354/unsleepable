@@ -19,6 +19,7 @@ export interface Report {
   created_at: string;
   reported_post_id: string | null;
   reported_comment_id: string | null;
+  community_id?: string | null;
 }
 
 // Định nghĩa Interface cho Repository

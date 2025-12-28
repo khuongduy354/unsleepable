@@ -5,6 +5,8 @@ export interface TagFilter {
   operator: "AND" | "OR" | "NOT";
 }
 
+export type SortBy = "relevance" | "time";
+
 export interface SearchPostsDTO {
   query: string;
   tagFilters?: TagFilter[]; // Multiple tag groups with different operators
@@ -12,6 +14,7 @@ export interface SearchPostsDTO {
   userId?: string; // For validating community access
   limit?: number;
   offset?: number;
+  sortBy?: SortBy; // 'relevance' (default) or 'time'
 }
 
 export interface PostSearchResult {

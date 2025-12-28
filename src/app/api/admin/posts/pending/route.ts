@@ -7,14 +7,14 @@ export async function GET(request: NextRequest) {
     // Get user ID from Supabase session
     const supabase = await createClient();
     const {
-      data: { session },
-    } = await supabase.auth.getSession();
+      data: { user },
+    } = await supabase.auth.getUser();
 
-    if (!session?.user?.id) {
+    if (!user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const userId = session.user.id;
+    const userId = user.id;
     const postService = await service.getPostService();
     const pendingPosts = await postService.getPendingPostsByAdmin(userId);
 

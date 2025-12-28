@@ -13,8 +13,10 @@ export async function GET(request: NextRequest) {
 
     // Get current user ID if authenticated (for excluding own username/email)
     const supabase = await createClient();
-    const { data: { session } } = await supabase.auth.getSession();
-    const currentUserId = session?.user?.id;
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    const currentUserId = user?.id;
 
     const userService = await service.getUserService();
 
@@ -41,7 +43,10 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error("Error checking availability:", error);
     return NextResponse.json(
-      { error: "Failed to check availability.", details: (error as Error).message },
+      {
+        error: "Failed to check availability.",
+        details: (error as Error).message,
+      },
       { status: 500 }
     );
   }

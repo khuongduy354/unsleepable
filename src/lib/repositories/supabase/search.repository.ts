@@ -16,6 +16,7 @@ export class SupabaseSearchRepository implements ISearchRepository {
       userId = null,
       limit = 20,
       offset = 0,
+      sortBy = "relevance",
     } = params;
 
     // Separate tags by operator
@@ -57,9 +58,19 @@ export class SupabaseSearchRepository implements ISearchRepository {
 
     // Map community names to results
     const communityMap = new Map(communities?.map((c) => [c.id, c.name]) || []);
-    return results.map((result) => ({
+    const mappedResults = results.map((result) => ({
       ...result,
       community_name: communityMap.get(result.community_id) || undefined,
     }));
+
+    // Sort results based on sortBy parameter
+    if (sortBy === "time") {
+      return mappedResults.sort(
+        (a, b) =>
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+    }
+    // 'relevance' - return as-is (already sorted by similarity/engagement from RPC)
+    return mappedResults;
   }
 }

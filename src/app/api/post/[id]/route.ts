@@ -40,6 +40,7 @@ export async function PATCH(
       title: body.title,
       content: body.content,
       shortUrl: body.shortUrl,
+      summary: body.summary,
     };
 
     if (body.shortUrl) {

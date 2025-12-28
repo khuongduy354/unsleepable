@@ -319,16 +319,24 @@ export default function PostDetailPage() {
 
     setSummarizing(true);
     try {
+      // Add timeout for slow requests
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 60000); // 60s timeout
+
       const response = await fetch("/api/aisummarize", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ content: post.content }),
+        signal: controller.signal,
       });
 
+      clearTimeout(timeoutId);
+
       if (!response.ok) {
-        throw new Error("Failed to summarize");
+        const error = await response.json();
+        throw new Error(error.error || "Failed to summarize");
       }
 
       const { summary } = await response.json();
@@ -344,9 +352,16 @@ export default function PostDetailPage() {
         description: "Post summarized successfully",
       });
     } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.name === "AbortError"
+            ? "Summarization timed out. Please try again."
+            : error.message
+          : "Failed to summarize post";
+
       toast({
         title: "Error",
-        description: "Failed to summarize post",
+        description: message,
         variant: "destructive",
       });
     } finally {
@@ -514,7 +529,11 @@ export default function PostDetailPage() {
               </div>
               {post.user_id === userId && (
                 <div className="flex gap-2">
-                  <Button size="sm" variant="outline">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => router.push(`/posts/edit/${postId}`)}
+                  >
                     <Edit className="h-4 w-4" />
                   </Button>
                   <Button
@@ -531,7 +550,7 @@ export default function PostDetailPage() {
           <CardContent>
             {/* Summary Toggle - shown to everyone if summary exists */}
             {post.summary && (
-              <div className="mb-4">
+              <div className="mb-4 flex items-center gap-2">
                 <Button
                   variant="outline"
                   size="sm"
@@ -539,6 +558,26 @@ export default function PostDetailPage() {
                 >
                   {showSummary ? "Show Full Content" : "Show Summary"}
                 </Button>
+                {post.user_id === userId && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleSummarize}
+                    disabled={summarizing}
+                  >
+                    {summarizing ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Re-summarizing...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="mr-2 h-4 w-4" />
+                        Re-summarize
+                      </>
+                    )}
+                  </Button>
+                )}
               </div>
             )}
 
@@ -551,25 +590,31 @@ export default function PostDetailPage() {
 
             {/* Summarize button - only for post owner and if not summarized */}
             {post.user_id === userId && !post.summary && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleSummarize}
-                disabled={summarizing}
-                className="mb-4"
-              >
-                {summarizing ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Summarizing...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="mr-2 h-4 w-4" />
-                    AI Summarize
-                  </>
+              <div className="mb-4">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleSummarize}
+                  disabled={summarizing}
+                >
+                  {summarizing ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Summarizing...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="mr-2 h-4 w-4" />
+                      AI Summarize
+                    </>
+                  )}
+                </Button>
+                {summarizing && (
+                  <p className="text-xs text-muted-foreground mt-2">
+                    This may take 15-30 seconds on first use...
+                  </p>
                 )}
-              </Button>
+              </div>
             )}
 
             <Separator className="my-4" />

@@ -16,6 +16,8 @@ export interface UpdatePostDTO {
   media_type?: string;
   storage_path?: string;
   status?: "approved" | "pending" | "rejected";
+  summary?: string;
+  shortUrl?: string;
 }
 
 export interface PostFilters {

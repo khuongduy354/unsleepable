@@ -318,11 +318,8 @@ export default function NotificationsPage() {
               </CardContent>
             </Card>
           ) : (
-            notifications.map((notification) => (
-              <Card
-                key={notification.id}
-                className="hover:shadow-md transition-shadow"
-              >
+            notifications.map((notification, idx) => (
+              <Card key={idx} className="hover:shadow-md transition-shadow">
                 <CardHeader className="py-3 px-4">
                   <div className="flex items-start gap-3">
                     <div className="mt-0.5">
