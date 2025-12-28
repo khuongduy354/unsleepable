@@ -15,6 +15,7 @@ import {
 export class MockPostRepository implements IPostRepository {
   private posts: Post[] = [];
   private comments: Comment[] = [];
+  private reactions: Map<string, { userId: string; type: "like" | "dislike" }[]> = new Map();
   private idCounter = 1;
   private commentIdCounter = 1;
 
@@ -22,6 +23,7 @@ export class MockPostRepository implements IPostRepository {
   reset() {
     this.posts = [];
     this.comments = [];
+    this.reactions = new Map();
     this.idCounter = 1;
     this.commentIdCounter = 1;
   }
@@ -36,11 +38,15 @@ export class MockPostRepository implements IPostRepository {
     const post: Post = {
       id: `post-${this.idCounter++}`,
       user_id: data.author_id,
-      community_id: "community-1",
+      community_id: data.community_id,
       title: data.title,
       content: data.content,
       created_at: now,
       updated_at: now,
+      status: "pending",
+      likes_count: 0,
+      dislikes_count: 0,
+      comments_count: 0,
     };
     this.posts.push(post);
     return post;
@@ -60,6 +66,17 @@ export class MockPostRepository implements IPostRepository {
 
   async findByCommunityId(communityId: string): Promise<Post[]> {
     return this.posts.filter((p) => p.community_id === communityId);
+  }
+
+  async findTrending(limit: number = 10): Promise<Post[]> {
+    // Simple mock implementation - return posts sorted by engagement
+    return [...this.posts]
+      .sort((a, b) => {
+        const scoreA = (a.likes_count || 0) - (a.dislikes_count || 0) + (a.comments_count || 0) * 2;
+        const scoreB = (b.likes_count || 0) - (b.dislikes_count || 0) + (b.comments_count || 0) * 2;
+        return scoreB - scoreA;
+      })
+      .slice(0, limit);
   }
 
   async update(id: string, data: UpdatePostDTO): Promise<Post> {
