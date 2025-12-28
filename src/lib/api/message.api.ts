@@ -8,6 +8,14 @@ interface DirectMessage {
   created_at: string;
 }
 
+interface Conversation {
+  partnerId: string;
+  partnerName: string;
+  lastMessage: string;
+  lastMessageTime: string;
+  unreadCount: number;
+}
+
 export const messageApi = {
   // Get message history with a partner
   async getHistory(partnerId: string): Promise<DirectMessage[]> {
@@ -37,6 +45,17 @@ export const messageApi = {
     if (!response.ok) {
       const errorData = await response.json();
       throw new Error(errorData.error || "Failed to send message");
+    }
+
+    return await response.json();
+  },
+
+  // Get all conversations for current user
+  async getConversations(): Promise<Conversation[]> {
+    const response = await fetch("/api/message/conversations");
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch conversations");
     }
 
     return await response.json();

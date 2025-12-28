@@ -8,8 +8,11 @@ export async function POST(req: NextRequest) {
     let userId: string;
     try {
       userId = await requireAuth(req);
+      console.log("userId:", userId);
+
     } catch {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }finally{
     }
 
     const formData = await req.formData();
