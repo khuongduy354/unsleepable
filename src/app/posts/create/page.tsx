@@ -154,7 +154,7 @@ export default function CreatePostPage() {
         description: "Post created successfully",
       });
 
-      router.push(`/posts/${newPost.id}`);
+      // router.push(`/posts/${newPost.id}`);
     } catch (error) {
       toast({
         title: "Error",

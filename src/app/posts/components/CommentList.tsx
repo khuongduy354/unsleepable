@@ -2,7 +2,21 @@
 
 import { Comment } from "@/lib/types/post.type";
 import { useState, useEffect } from "react";
-import { commentApi } from "@/lib/api";
+import { commentApi, reportApi } from "@/lib/api";
+import { Flag } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { useUser } from "@/contexts/UserContext";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 
 interface CommentListProps {
   postId: string;
@@ -18,6 +32,12 @@ export default function CommentList({
   const [newComment, setNewComment] = useState("");
   const [replyTo, setReplyTo] = useState<string | null>(null);
   const [replyContent, setReplyContent] = useState("");
+  const [reportDialogOpen, setReportDialogOpen] = useState(false);
+  const [reportCommentId, setReportCommentId] = useState<string | null>(null);
+  const [reportReason, setReportReason] = useState("");
+  const [submittingReport, setSubmittingReport] = useState(false);
+  const { toast } = useToast();
+  const { userId } = useUser();
 
   useEffect(() => {
     setComments(initialComments);
@@ -77,6 +97,59 @@ export default function CommentList({
     }
   };
 
+  const handleReportClick = (commentId: string) => {
+    if (!userId) {
+      toast({
+        title: "Error",
+        description: "Please login to report comments",
+        variant: "destructive",
+      });
+      return;
+    }
+    setReportCommentId(commentId);
+    setReportReason("");
+    setReportDialogOpen(true);
+  };
+
+  const handleSubmitReport = async () => {
+    if (!userId || !reportCommentId || !reportReason.trim()) {
+      toast({
+        title: "Error",
+        description: "Please provide a reason for the report",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setSubmittingReport(true);
+    try {
+      await reportApi.create(
+        {
+          reportedEntityId: reportCommentId,
+          reportedEntityType: "COMMENT",
+          reason: reportReason.trim(),
+        },
+        userId
+      );
+      toast({
+        title: "Success",
+        description: "Comment reported successfully",
+      });
+      setReportDialogOpen(false);
+      setReportCommentId(null);
+      setReportReason("");
+    } catch (error) {
+      toast({
+        title: "Error",
+        description:
+          error instanceof Error ? error.message : "Failed to submit report",
+        variant: "destructive",
+      });
+    } finally {
+      setSubmittingReport(false);
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex gap-2">
@@ -114,6 +187,13 @@ export default function CommentList({
                 {replies[comment.id]
                   ? `${replies[comment.id].length} replies`
                   : "Show replies"}
+              </button>
+              <button
+                onClick={() => handleReportClick(comment.id)}
+                className="text-red-500 hover:text-red-700 flex items-center gap-1"
+                title="Report comment"
+              >
+                <Flag className="w-4 h-4" />
               </button>
             </div>
 
@@ -156,6 +236,44 @@ export default function CommentList({
           )}
         </div>
       ))}
+
+      <Dialog open={reportDialogOpen} onOpenChange={setReportDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Report Comment</DialogTitle>
+            <DialogDescription>
+              Please provide a reason for reporting this comment.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="report-reason">Reason</Label>
+              <Textarea
+                id="report-reason"
+                placeholder="Describe why you're reporting this comment..."
+                value={reportReason}
+                onChange={(e) => setReportReason(e.target.value)}
+                rows={4}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setReportDialogOpen(false)}
+              disabled={submittingReport}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSubmitReport}
+              disabled={submittingReport || !reportReason.trim()}
+            >
+              {submittingReport ? "Submitting..." : "Submit Report"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

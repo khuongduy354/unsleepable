@@ -77,7 +77,7 @@ export default function PostList({ posts }: PostListProps) {
       await reportApi.create(
         {
           reportedEntityId: reportPostId,
-          reportedEntityType: "post",
+          reportedEntityType: "POST",
           reason: reportReason.trim(),
         },
         userId
