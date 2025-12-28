@@ -3,9 +3,10 @@ export interface CreatePostDTO {
   title: string;
   content: string;
   author_id: string;
-  media_url: string;
-  media_type: "media" | "video";
-  storage_path: string;
+  community_id: string;
+  media_url?: string;
+  media_type?: "media" | "video";
+  storage_path?: string;
 }
 
 export interface UpdatePostDTO {
@@ -30,6 +31,11 @@ export interface Post {
   created_at: string;
   updated_at: string;
   status: "approved" | "pending" | "rejected";
+  likes_count: number;
+  dislikes_count: number;
+  comments_count: number;
+  engagement_score?: number | null;
+  summary?: string | null;
   author_email?: string;
   author_name?: string;
 }

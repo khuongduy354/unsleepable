@@ -31,9 +31,15 @@ export interface ICommunityRepository {
     page?: number,
     limit?: number
   ): Promise<PaginatedCommunities>;
+  findByMemberId(
+    userId: string,
+    page?: number,
+    limit?: number
+  ): Promise<PaginatedCommunities>;
   update(id: string, data: UpdateCommunityDTO): Promise<Community>;
   delete(id: string): Promise<void>;
   isOwner(communityId: string, userId: string): Promise<boolean>;
+  isMember(communityId: string, userId: string): Promise<boolean>;
   addTagToCommunityArray(communityId: string, tagName: string): Promise<void>;
   getCommunityStats(communityId: string): Promise<CommunityStatsDTO>;
 }
@@ -60,5 +66,5 @@ export interface CommunityStatsDTO {
   communityId: string;
   totalPosts: number;
   totalMembers: number;
-  activeEngagementRate: number; 
+  activeEngagementRate: number;
 }

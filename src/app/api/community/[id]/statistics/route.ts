@@ -9,42 +9,44 @@ import { requireAuth } from "@/lib/auth-middleware";
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const communityId = params.id;
+  const { id: communityId } = await params;
 
   try {
-    const userId = requireAuth(request);
+    const userId = await requireAuth(request);
 
     // Lấy Service Layer
     const communityService = await service.getCommunityService();
 
-    const statistics = await communityService.getStats(
-      communityId,
-      userId 
-    );
+    const statistics = await communityService.getStats(communityId, userId);
     return NextResponse.json({ statistics });
-    
   } catch (error) {
-    console.error(`Error fetching statistics for community ${communityId}:`, error);
-    
+    console.error(
+      `Error fetching statistics for community ${communityId}:`,
+      error
+    );
+
     // handle error
     let statusCode = 400;
-    const errorMessage = error instanceof Error ? error.message : "Failed to fetch community statistics";
+    const errorMessage =
+      error instanceof Error
+        ? error.message
+        : "Failed to fetch community statistics";
 
     if (errorMessage.includes("Unauthorized")) {
-      statusCode = 401; 
-    } else if (errorMessage.includes("Forbidden") || errorMessage.includes("not the owner")) {
-      statusCode = 403; 
+      statusCode = 401;
+    } else if (
+      errorMessage.includes("Forbidden") ||
+      errorMessage.includes("not the owner")
+    ) {
+      statusCode = 403;
     } else if (errorMessage.includes("not found")) {
-      statusCode = 404; 
+      statusCode = 404;
     } else if (errorMessage.includes("Validation failed")) {
-      statusCode = 422; 
+      statusCode = 422;
     }
 
-    return NextResponse.json(
-      { error: errorMessage },
-      { status: statusCode }
-    );
+    return NextResponse.json({ error: errorMessage }, { status: statusCode });
   }
 }

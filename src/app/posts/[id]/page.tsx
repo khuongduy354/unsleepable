@@ -73,6 +73,49 @@ export default function PostDetailPage() {
   const [summarizing, setSummarizing] = useState(false);
   const [showSummary, setShowSummary] = useState(false);
 
+  // Helper function to render content with markdown images
+  const renderContent = (content: string) => {
+    const parts = [];
+    let lastIndex = 0;
+    // Regex to match markdown image syntax: ![alt text](image_url)
+    const imageRegex = /!\[([^\]]*)\]\(([^)]+)\)/g;
+    let match;
+
+    while ((match = imageRegex.exec(content)) !== null) {
+      // Add text before the image
+      if (match.index > lastIndex) {
+        parts.push(
+          <span key={`text-${lastIndex}`}>
+            {content.substring(lastIndex, match.index)}
+          </span>
+        );
+      }
+
+      // Add the image
+      const altText = match[1];
+      const imageUrl = match[2];
+      parts.push(
+        <img
+          key={`img-${match.index}`}
+          src={imageUrl}
+          alt={altText}
+          className="max-w-full h-auto rounded-lg my-4"
+        />
+      );
+
+      lastIndex = match.index + match[0].length;
+    }
+
+    // Add remaining text after the last image
+    if (lastIndex < content.length) {
+      parts.push(
+        <span key={`text-${lastIndex}`}>{content.substring(lastIndex)}</span>
+      );
+    }
+
+    return parts.length > 0 ? parts : content;
+  };
+
   useEffect(() => {
     if (postId) {
       fetchPost();
@@ -353,9 +396,11 @@ export default function PostDetailPage() {
             )}
 
             {/* Display content or summary */}
-            <p className="text-base whitespace-pre-wrap mb-6">
-              {showSummary && post.summary ? post.summary : post.content}
-            </p>
+            <div className="text-base whitespace-pre-wrap mb-6">
+              {renderContent(
+                showSummary && post.summary ? post.summary : post.content
+              )}
+            </div>
 
             {/* Summarize button - only for post owner and if not summarized */}
             {post.user_id === userId && !post.summary && (

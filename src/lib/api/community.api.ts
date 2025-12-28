@@ -46,6 +46,22 @@ export const communityApi = {
     return await response.json();
   },
 
+  // Get member communities (communities where user is a member)
+  async getMemberCommunities(
+    page: number = 1,
+    limit: number = 100
+  ): Promise<PaginatedResponse> {
+    const response = await fetch(
+      `/api/community/member?page=${page}&limit=${limit}`
+    );
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch member communities");
+    }
+
+    return await response.json();
+  },
+
   // Create community
   async create(
     userId: string,
@@ -111,6 +127,34 @@ export const communityApi = {
     if (!response.ok) {
       const errorData = await response.json();
       throw new Error(errorData.error || "Failed to delete community");
+    }
+
+    return await response.json();
+  },
+
+  // Get community statistics (owner only)
+  async getStatistics(
+    communityId: string,
+    userId: string
+  ): Promise<{
+    statistics: {
+      communityId: string;
+      totalPosts: number;
+      totalMembers: number;
+      activeEngagementRate: number;
+    };
+  }> {
+    const response = await fetch(`/api/community/${communityId}/statistics`, {
+      headers: {
+        "x-user-id": userId,
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(
+        errorData.error || "Failed to fetch community statistics"
+      );
     }
 
     return await response.json();

@@ -259,6 +259,65 @@ export class SupabaseCommunityRepository implements ICommunityRepository {
     };
   }
 
+  async findByMemberId(
+    userId: string,
+    page: number = 1,
+    limit: number = 10
+  ): Promise<PaginatedCommunities> {
+    const offset = (page - 1) * limit;
+
+    // Get all community IDs where user is a member (any role)
+    const { data: memberData, error: memberError } = await this.supabase
+      .from("CommunityMember")
+      .select("community_id")
+      .eq("user_account_id", userId);
+
+    if (memberError) {
+      throw new Error(
+        `Failed to fetch member communities: ${memberError.message}`
+      );
+    }
+
+    if (!memberData || memberData.length === 0) {
+      return {
+        communities: [],
+        total: 0,
+        page,
+        limit,
+        totalPages: 0,
+      };
+    }
+
+    const communityIds = memberData.map((m) => m.community_id);
+
+    // Fetch the actual communities
+    const {
+      data: communities,
+      error,
+      count,
+    } = await this.supabase
+      .from("Community")
+      .select("*", { count: "exact" })
+      .in("id", communityIds)
+      .order("created_at", { ascending: false })
+      .range(offset, offset + limit - 1);
+
+    if (error) {
+      throw new Error(`Failed to fetch member communities: ${error.message}`);
+    }
+
+    const total = count || 0;
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      communities: communities || [],
+      total,
+      page,
+      limit,
+      totalPages,
+    };
+  }
+
   async update(id: string, data: UpdateCommunityDTO): Promise<Community> {
     const { data: community, error } = await this.supabase
       .from("Community")
@@ -307,6 +366,24 @@ export class SupabaseCommunityRepository implements ICommunityRepository {
     }
 
     return data?.role === "admin";
+  }
+
+  async isMember(communityId: string, userId: string): Promise<boolean> {
+    const { data, error } = await this.supabase
+      .from("CommunityMember")
+      .select("user_account_id")
+      .eq("community_id", communityId)
+      .eq("user_account_id", userId)
+      .single();
+
+    if (error) {
+      if (error.code === "PGRST116") {
+        return false; // No membership found
+      }
+      throw new Error(`Failed to check membership: ${error.message}`);
+    }
+
+    return !!data;
   }
   async addTagToCommunityArray(
     communityId: string,

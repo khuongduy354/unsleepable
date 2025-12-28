@@ -5,7 +5,7 @@ import {
   UpdateCommunityDTO,
   CommunityFilters,
   PaginatedCommunities,
-  CommunityStatsDTO
+  CommunityStatsDTO,
 } from "../types/community.type";
 
 export interface ICommunityService {
@@ -13,6 +13,11 @@ export interface ICommunityService {
   getCommunityById(id: string): Promise<Community | null>;
   getCommunities(filters?: CommunityFilters): Promise<PaginatedCommunities>;
   getOwnedCommunities(
+    userId: string,
+    page?: number,
+    limit?: number
+  ): Promise<PaginatedCommunities>;
+  getMemberCommunities(
     userId: string,
     page?: number,
     limit?: number
@@ -25,6 +30,7 @@ export interface ICommunityService {
   deleteCommunity(id: string, userId: string): Promise<void>;
   syncTagToCommunity(communityId: string, tagName: string): Promise<void>;
   getStats(id: string, userId: string): Promise<CommunityStatsDTO>;
+  isMember(communityId: string, userId: string): Promise<boolean>;
 }
 
 export class CommunityService implements ICommunityService {
@@ -105,6 +111,26 @@ export class CommunityService implements ICommunityService {
     return await this.communityRepository.findByOwnerId(userId, page, limit);
   }
 
+  async getMemberCommunities(
+    userId: string,
+    page: number = 1,
+    limit: number = 10
+  ): Promise<PaginatedCommunities> {
+    if (!userId) {
+      throw new Error("User ID is required");
+    }
+
+    if (page < 1) {
+      throw new Error("Page must be greater than 0");
+    }
+
+    if (limit < 1 || limit > 100) {
+      throw new Error("Limit must be between 1 and 100");
+    }
+
+    return await this.communityRepository.findByMemberId(userId, page, limit);
+  }
+
   async updateCommunity(
     id: string,
     userId: string,
@@ -142,11 +168,11 @@ export class CommunityService implements ICommunityService {
       }
 
       for (const tag of data.tags) {
-        if (typeof tag !== 'string' || tag.trim().length === 0) {
+        if (typeof tag !== "string" || tag.trim().length === 0) {
           throw new Error("All tags must be non-empty strings");
         }
         // Giới hạn độ dài từng tag (Ví dụ: Tối đa 50 ký tự)
-        if (tag.length > 50) { 
+        if (tag.length > 50) {
           throw new Error("Each tag must be less than 50 characters");
         }
       }
@@ -183,8 +209,11 @@ export class CommunityService implements ICommunityService {
 
     await this.communityRepository.delete(id);
   }
-  async syncTagToCommunity(communityId: string, tagName: string): Promise<void> {
-    await this.communityRepository.addTagToCommunityArray(communityId, tagName); 
+  async syncTagToCommunity(
+    communityId: string,
+    tagName: string
+  ): Promise<void> {
+    await this.communityRepository.addTagToCommunityArray(communityId, tagName);
   }
 
   async getStats(id: string, userId: string): Promise<CommunityStatsDTO> {
@@ -203,5 +232,15 @@ export class CommunityService implements ICommunityService {
     }
 
     return await this.communityRepository.getCommunityStats(id);
+  }
+
+  async isMember(communityId: string, userId: string): Promise<boolean> {
+    if (!communityId) {
+      throw new Error("Community ID is required");
+    }
+    if (!userId) {
+      throw new Error("User ID is required");
+    }
+    return await this.communityRepository.isMember(communityId, userId);
   }
 }

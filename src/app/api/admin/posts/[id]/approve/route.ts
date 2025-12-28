@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { service } from "@/lib/setup/index";
+import { requireAuth } from "@/lib/auth-middleware";
 
 export async function POST(
   request: NextRequest,
@@ -7,6 +8,7 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
+    await requireAuth(request); // Ensure user is authenticated
     const postService = await service.getPostService();
     const post = await postService.approvePost(id);
 
@@ -21,7 +23,8 @@ export async function POST(
 
     return NextResponse.json(
       {
-        error: error instanceof Error ? error.message : "Failed to approve post",
+        error:
+          error instanceof Error ? error.message : "Failed to approve post",
       },
       { status: statusCode }
     );

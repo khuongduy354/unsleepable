@@ -23,7 +23,16 @@ import {
 } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Plus, Edit, Trash2, Users, Lock, Globe } from "lucide-react";
+import {
+  Loader2,
+  Plus,
+  Edit,
+  Trash2,
+  Users,
+  Lock,
+  Globe,
+  BarChart3,
+} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import AppLayout from "@/components/AppLayout";
 
@@ -41,6 +50,13 @@ interface PaginatedResponse {
   page: number;
   limit: number;
   totalPages: number;
+}
+
+interface CommunityStats {
+  communityId: string;
+  totalPosts: number;
+  totalMembers: number;
+  activeEngagementRate: number;
 }
 
 export default function CommunitiesPage() {
@@ -64,6 +80,10 @@ export default function CommunitiesPage() {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [statsLoading, setStatsLoading] = useState<string | null>(null);
+  const [communityStats, setCommunityStats] = useState<
+    Record<string, CommunityStats>
+  >({});
 
   // Get userId from localStorage on mount
   useEffect(() => {
@@ -98,6 +118,36 @@ export default function CommunitiesPage() {
       setError(
         err instanceof Error ? err.message : "Failed to fetch owned communities"
       );
+    }
+  };
+
+  // Fetch community statistics
+  const fetchStatistics = async (communityId: string) => {
+    if (!userId) {
+      toast({
+        title: "Error",
+        description: "Please login to view statistics",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setStatsLoading(communityId);
+    try {
+      const data = await communityApi.getStatistics(communityId, userId);
+      setCommunityStats((prev) => ({
+        ...prev,
+        [communityId]: data.statistics,
+      }));
+    } catch (err) {
+      toast({
+        title: "Error",
+        description:
+          err instanceof Error ? err.message : "Failed to fetch statistics",
+        variant: "destructive",
+      });
+    } finally {
+      setStatsLoading(null);
     }
   };
 
@@ -430,6 +480,18 @@ export default function CommunitiesPage() {
                         <Button
                           size="sm"
                           variant="outline"
+                          onClick={() => fetchStatistics(community.id)}
+                          disabled={statsLoading === community.id}
+                        >
+                          {statsLoading === community.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <BarChart3 className="h-4 w-4" />
+                          )}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
                           onClick={() => startEdit(community)}
                         >
                           <Edit className="h-4 w-4" />
@@ -445,9 +507,49 @@ export default function CommunitiesPage() {
                     </div>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-sm text-muted-foreground mb-3">
                       {community.description || "No description provided"}
                     </p>
+
+                    {/* Statistics Display */}
+                    {communityStats[community.id] && (
+                      <div className="mt-3 p-3 bg-white dark:bg-gray-800 rounded-lg border">
+                        <h4 className="text-sm font-semibold mb-2 flex items-center gap-1">
+                          <BarChart3 className="h-4 w-4" />
+                          Statistics
+                        </h4>
+                        <div className="grid grid-cols-3 gap-2 text-center">
+                          <div>
+                            <p className="text-lg font-bold text-blue-600">
+                              {communityStats[community.id].totalMembers}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              Members
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-lg font-bold text-green-600">
+                              {communityStats[community.id].totalPosts}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              Posts
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-lg font-bold text-orange-600">
+                              {(
+                                communityStats[community.id]
+                                  .activeEngagementRate * 100
+                              ).toFixed(1)}
+                              %
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              Engagement
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               ))}

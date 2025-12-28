@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { service } from "@/lib/setup/index";
 import { CreatePostDTO, PostFilters } from "@/lib/types/post.type";
+import { requireAuth } from "@/lib/auth-middleware";
 
 export async function GET(request: NextRequest) {
   try {
@@ -31,19 +32,43 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const userId = await requireAuth(request);
     const postService = await service.getPostService();
-    const body: CreatePostDTO = await request.json();
+    const communityService = await service.getCommunityService();
+    const body = await request.json();
 
-    const post = await postService.createPost(body);
+    // Check if user is a member of the community
+    if (body.community_id) {
+      const isMember = await communityService.isMember(
+        body.community_id,
+        userId
+      );
+      if (!isMember) {
+        return NextResponse.json(
+          { error: "You must be a member of this community to post" },
+          { status: 403 }
+        );
+      }
+    }
+
+    // Create post with authenticated user ID
+    const postData: CreatePostDTO = {
+      ...body,
+      author_id: userId,
+    };
+
+    const post = await postService.createPost(postData);
 
     return NextResponse.json({ post }, { status: 201 });
   } catch (error) {
     console.error("Error creating post:", error);
+    const statusCode =
+      error instanceof Error && error.message === "Unauthorized" ? 401 : 400;
     return NextResponse.json(
       {
         error: error instanceof Error ? error.message : "Failed to create post",
       },
-      { status: 400 }
+      { status: statusCode }
     );
   }
 }

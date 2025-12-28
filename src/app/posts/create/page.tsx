@@ -114,7 +114,8 @@ export default function CreatePostPage() {
   const fetchCommunities = async () => {
     try {
       setLoadingCommunities(true);
-      const data = await communityApi.getAll(1, 100);
+      // Fetch only communities where the user is a member
+      const data = await communityApi.getMemberCommunities(1, 100);
       setCommunities(data.communities || []);
     } catch (error) {
       toast({
@@ -217,7 +218,8 @@ export default function CreatePostPage() {
                 )}
                 {communities.length === 0 && !loadingCommunities && (
                   <p className="text-sm text-muted-foreground">
-                    No communities available. Create one first.
+                    No communities available. Join a community first to create
+                    posts.
                   </p>
                 )}
               </div>

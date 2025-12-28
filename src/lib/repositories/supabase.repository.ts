@@ -8,8 +8,7 @@ import {
   UpdateCommentDTO,
   Comment,
 } from "../types/post.type";
-const fakeUserId = "d2f1d6c0-47b4-4e3d-9ce4-5cb9033e1234"; // id có thật trong User
-const fakeCommunityId = "6f346e21-93a1-48ee-b1c5-55791f44afcd";
+
 export class SupabasePostRepository implements IPostRepository {
   constructor(private supabase: SupabaseClient) {}
 
@@ -17,14 +16,10 @@ export class SupabasePostRepository implements IPostRepository {
     const { data: post, error } = await this.supabase
       .from("Post")
       .insert({
-        user_id: fakeUserId,
-        community_id: fakeCommunityId,
+        user_id: data.author_id,
+        community_id: data.community_id,
         title: data.title,
         content: data.content,
-        author_id: data.author_id,
-        media_url: data.media_url,
-        media_type: data.media_type,
-        storage_path: data.storage_path,
       })
       .select()
       .single();
