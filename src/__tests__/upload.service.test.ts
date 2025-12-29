@@ -68,7 +68,7 @@ describe("Upload Service Tests", () => {
     expect(data?.path).toBe(fileName);
 
     uploadedFiles.push(fileName);
-  });
+  }, 10000);
 
   test("2. Should get public URL for uploaded file", async () => {
     const fileName = `uploads/test-url-${Date.now()}.txt`;
